@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.DoubleFunction;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
+import java.util.function.Supplier;
 
 public class chapter3 {
 
@@ -34,9 +36,9 @@ public class chapter3 {
 		Interface3 i3 = () -> {};					// Runnable 인터페이스의 시그니처와 동일
 		
 		infoGetAge();
-		infoGet((User user) -> user.getName());
-		infoGet((User user) -> user.getAge());
-		infoGet((User user) -> user.getBirth());
+		infoGet(new User(), (User user) -> user.getName());
+		infoGet(new User(), (User user) -> user.getAge());
+		infoGet(new User(), (User user) -> user.getBirth());
 		
 		Consumer c = null;
 		IntPredicate i = null;
@@ -58,18 +60,30 @@ public class chapter3 {
 		String a = "AAA";
 //		a += "BB";									컴파일 에러
 		
-		infoGet((user) -> a+user.getName());
-		infoGet((user) -> a+user.getAge());
-		infoGet((user) -> a+user.getBirth());
+		infoGet(new User(), (user) -> a+user.getName());
+		infoGet(new User(), (user) -> a+user.getAge());
+		infoGet(new User(), (user) -> a+user.getBirth());
 		
 //		a += "BB";									컴파일 에러
 		
+		System.out.println("\n>> 3.6 메서드 참조");
+		Supplier<User> s1 = User::new;
+		infoGet(s1.get(), User::getName);
+		
+		Function<Double, Double> f1 = (Double x) -> x+10;
+		double answer = integrate(f1, 3.0, 7.0);
+		System.out.println(answer);
 		
 	}
+
+	public static double integrate(Function<Double, Double> f, double input1, double input2) {
+		return (f.apply(input1) + f.apply(input2)) * (input2-input1) / 2;
+	}
 	
-	public static void infoGet(Info info){
+	
+	public static void infoGet(User user, Info info){
 		String result = "****";
-		result += info.function(new User());
+		result += info.function(user);
 		result += "****";
 		System.out.println(result);
 	}
