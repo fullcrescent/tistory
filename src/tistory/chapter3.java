@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.DoubleFunction;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
@@ -35,10 +35,12 @@ public class chapter3 {
 		Runnable r = () -> {};
 		Interface3 i3 = () -> {};					// Runnable 인터페이스의 시그니처와 동일
 		
-		infoGetAge();
-		infoGet(new User(), (User user) -> user.getName());
-		infoGet(new User(), (User user) -> user.getAge());
-		infoGet(new User(), (User user) -> user.getBirth());
+		User user = new User("홍길동", 29, "2022-07-07");
+		infoGetAge(user);
+		
+		infoGet(user, (User u) -> u.getName());
+//		infoGet(user, (User u) -> u.getAge());			// 반환 형태가 String이여야 한다.
+		infoGet(user, (User u) -> u.getBirth());
 		
 		Consumer c = null;
 		IntPredicate i = null;
@@ -59,16 +61,31 @@ public class chapter3 {
 		
 		String a = "AAA";
 //		a += "BB";									컴파일 에러
-		
-		infoGet(new User(), (user) -> a+user.getName());
-		infoGet(new User(), (user) -> a+user.getAge());
-		infoGet(new User(), (user) -> a+user.getBirth());
-		
+		infoGet(user, (u) -> a+u.getName());
+		infoGet(user, (u) -> a+u.getAge());
+		infoGet(user, (u) -> a+u.getBirth());
 //		a += "BB";									컴파일 에러
 		
 		System.out.println("\n>> 3.6 메서드 참조");
-		Supplier<User> s1 = User::new;
-		infoGet(s1.get(), User::getName);
+		Supplier<User> supplier1;
+		// 시그니처 : () -> T 
+		supplier1 = () -> new User();			// 람다 표현식 사용
+		supplier1.get().mydataPrint();
+		
+		supplier1 = User::new;					// 메서드 참조 사용
+		supplier1.get().mydataPrint();
+		
+		BiFunction<String, Integer, User> biFunction1;
+		// 시그니처 : (String, Integer) -> User
+		biFunction1 = (s1, s2) -> new User(s1, s2);		// 시그니처에 따른 파라미터를 표현해야함.(s1, s2)
+		biFunction1.apply("유저1", 10).mydataPrint();;
+		
+		biFunction1 = User::new;							// 전부 생략 가능
+		biFunction1.apply("유저2", 20).mydataPrint();;
+		
+		
+		Consumer<String> consumer1 = User::sMydataPrint;
+		
 		
 		Function<Double, Double> f1 = (Double x) -> x+10;
 		double answer = integrate(f1, 3.0, 7.0);
@@ -80,7 +97,6 @@ public class chapter3 {
 		return (f.apply(input1) + f.apply(input2)) * (input2-input1) / 2;
 	}
 	
-	
 	public static void infoGet(User user, Info info){
 		String result = "****";
 		result += info.function(user);
@@ -88,8 +104,7 @@ public class chapter3 {
 		System.out.println(result);
 	}
 	
-	public static void infoGetAge(){
-		User user = new User();
+	public static void infoGetAge(User user){
 		String result = "****";
 		result += user.getAge();
 		result += "****";
@@ -120,18 +135,37 @@ interface Interface3{
 }
 
 class User{
-	String name = "홍길동";
-	String age = "29";
-	String birth = "2022-07-07";
+	String name;
+	Integer age;
+	String birth;
 	
+	public User() {
+	}
+	public User(String name, int age) {
+		super();
+		this.name = name;
+		this.age = age;
+	}
+	public User(String name, int age, String birth) {
+		super();
+		this.name = name;
+		this.age = age;
+		this.birth = birth;
+	}
 	public String getName() {
 		return name;
 	}
-	public String getAge() {
+	public int getAge() {
 		return age;
 	}
 	public String getBirth() {
 		return birth;
+	}
+	public void mydataPrint() {
+		System.out.println("이름 : " + name  + ", 나이 : " + age + ", 생일 : " + birth); 
+	}
+	public static void sMydataPrint(String s) {
+		System.out.println("static : " + s); 
 	}
 }
 
