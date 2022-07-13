@@ -1,4 +1,4 @@
-package tistory;
+package tistory.모던_자바_인_액션.chapter3;
 
 import static java.util.Comparator.comparing;
 
