@@ -2,6 +2,7 @@ package tistory.모던_자바_인_액션.chapter5;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class chapter5 {
@@ -41,10 +42,47 @@ public class chapter5 {
 		
 		System.out.println("\n>> 5.3 매핑");
 		
+		List<String> userNameList = Arrays.asList("User1", "User3", "User~~~", "User2");
+		
+		List<Integer> userNameLengthList = userNameList.stream()
+											.map(User::new)						// User 객체 이름으로 생성
+											.map(User::getName)					// "User1", "User3", "User~~~", "User2"
+											.map(String::length)				// 5, 5, 7, 5
+											.collect(Collectors.toList());		// [5, 5, 7, 5]
+		System.out.println(userNameLengthList);
+
+		List<String[]> stringArrayList = userNameList.stream()
+											.map(input -> input.split(""))
+											.distinct()
+											.collect(Collectors.toList());
+		stringArrayList.forEach(input -> System.out.print(Arrays.stream(input).collect(Collectors.joining("", "<", "> "))));
+		// <User1> <User3> <User~~~> <User2> 				
+		System.out.println();
+		
+		List<String> stringList = userNameList.stream()
+									.map(input -> input.split(""))
+									.flatMap(Arrays::stream)
+									.distinct()
+									.collect(Collectors.toList());	
+		System.out.println(stringList);		// [U, s, e, r, 1, 3, ~, 2]
 		
 		
+		System.out.println("\n>> 5.4 검색과 매칭");
 				
 		
 	}
 
+}
+
+class User{
+	String name;
+
+	public User(String name) {
+		super();
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
 }
