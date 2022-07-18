@@ -2,6 +2,7 @@ package tistory.모던_자바_인_액션.chapter5;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -69,6 +70,45 @@ public class chapter5 {
 		
 		System.out.println("\n>> 5.4 검색과 매칭");
 		
+		userNameList = Arrays.asList("User1", "User3", "User~~~", "User2");		// length [5, 5, 7, 5]
+		// anyMatch
+		System.out.println(
+				userNameList.stream().anyMatch(input -> input.length()==5));	// true
+		// allMatch
+		System.out.println(
+				userNameList.stream().allMatch(input -> input.length()==5));	// false
+		// noneMatch
+		System.out.println(
+				userNameList.stream().noneMatch(input -> input.length()==6));	// true
+		
+		
+		Optional<String> name = userNameList.stream()
+									.filter(input -> input.length()==6)
+									.findAny();
+		System.out.println(name);												// Optional.empty
+		System.out.println(name.isPresent());									// false				
+		System.out.println(name.orElse("defalut"));								// defalut
+//		System.out.println(name.get());											// java.util.NoSuchElementException
+		
+		name = userNameList.stream()
+						.filter(input -> input.length()==5)
+						.findAny();
+		System.out.println(name);												// Optional[User1]
+		System.out.println(name.isPresent());									// true			
+		System.out.println(name.orElse("defalut"));								// User1
+		System.out.println(name.get());											// User1
+		name.ifPresent(System.out::println);									// User1
+		
+		
+		name = userNameList.parallelStream()
+				.filter(input -> input.length()==5)
+				.findAny();
+		System.out.println(name);												// Optional[User2]
+		
+		name = userNameList.parallelStream()
+				.filter(input -> input.length()==5)
+				.findFirst();
+		System.out.println(name);												// Optional[User1]
 		
 		
 		System.out.println("\n>> 5.5 리듀싱");
