@@ -61,13 +61,29 @@ public class chapter5 {
 		
 		List<String> stringList = userNameList.stream()
 									.map(input -> input.split(""))
-									.flatMap(Arrays::stream)
+									.flatMap(Arrays::stream)			// 정보를 하나로 합침
 									.distinct()
 									.collect(Collectors.toList());	
 		System.out.println(stringList);		// [U, s, e, r, 1, 3, ~, 2]
 		
 		
 		System.out.println("\n>> 5.4 검색과 매칭");
+		
+		
+		
+		System.out.println("\n>> 5.5 리듀싱");
+		
+		
+		
+		System.out.println("\n>> 5.6 실전 연습");
+		
+		
+		
+		System.out.println("\n>> 5.7 숫자형 스트림");
+		
+		
+		
+		System.out.println("\n>> 5.8 스트림 만들기");
 				
 		
 	}
