@@ -67,18 +67,45 @@ public class chapter6 {
 			)
 		);
 		
-		Map<String, List<User>> userGroupMap = userList.stream().collect(Collectors.groupingBy(User::getType));
-		System.out.println(userGroupMap);
+		Map<String, List<User>> userGroupTypeMap;
+		userGroupTypeMap = userList.stream().collect(Collectors.groupingBy(User::getType));
+		System.out.println(userGroupTypeMap);				// {usr=[User2, User5], emp=[User0, User1, User3], adm=[User4]}
 		
-		Map<String, Long> userGroupCountMap = userList.stream().collect(Collectors.groupingBy(User::getType, Collectors.counting()));
-		System.out.println(userGroupCountMap);
+		Map<String, Long> userGroupTypeCountMap;
+		userGroupTypeCountMap = userList.stream().collect(Collectors.groupingBy(User::getType, Collectors.counting()));
+		System.out.println(userGroupTypeCountMap);			// {usr=2, emp=3, adm=1}
 		
 		
 		System.out.println("\n>> 6.4 분할");
 		
+		userList = new ArrayList<>(Arrays.asList(
+				 new User("User0", "emp", 0)
+				,new User("User1", "emp", 10)
+				,new User("User2", "usr", 20)
+				,new User("User5", "usr", 50)
+				,new User("User3", "emp", 30)
+				,new User("User4", "adm", 40)
+			)
+		);
 		
+		Map<Boolean, List<User>> userPartitionMap;
+		userPartitionMap = userList.stream()
+								.collect(Collectors.partitioningBy(i -> i.getType().equals("emp")));
+		System.out.println(userPartitionMap);				// {false=[User2, User5, User4], true=[User0, User1, User3]}
+		System.out.println(userPartitionMap.get(true));		// [User0, User1, User3]
+		
+		Map<Boolean, User> userPartitionMaxMap;
+		userPartitionMaxMap = userList.stream()
+								.collect(Collectors.partitioningBy(i -> i.getType().equals("emp"), 
+										Collectors.collectingAndThen(Collectors.maxBy(Comparator.comparingInt(User::getAge)), Optional<User>::get)));
+		System.out.println(userPartitionMaxMap.get(true));	// User3
+		System.out.println(userPartitionMaxMap.get(false)); // User5
+
 		
 		System.out.println("\n>> 6.5 Collector 인터페이스");
+		
+		
+		
 		
 		
 		
