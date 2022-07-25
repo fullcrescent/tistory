@@ -113,6 +113,7 @@ public class chapter6 {
 		System.out.println("\n>> 6.5 Collector 인터페이스");
 		
 		// 커밋 테스트
+		// 테스트
 		
 		
 		
