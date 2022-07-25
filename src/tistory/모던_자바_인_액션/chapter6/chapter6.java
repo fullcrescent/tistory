@@ -3,6 +3,7 @@ package tistory.모던_자바_인_액션.chapter6;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,7 +14,7 @@ public class chapter6 {
 
 	public static void main(String[] args) {
 		System.out.println("\n>> 6.1 컬렉터란 무엇인가?");
-		
+
 		List<String> stringList = Arrays.asList("User1", "User3", "User4" , "User2", "User111");
 		Stream<String> listStream = stringList.stream().filter(s -> s.length()==5);
 		List<String> filterList = listStream.collect(Collectors.toList());
@@ -47,11 +48,18 @@ public class chapter6 {
 		double avg = integerList.stream().collect(Collectors.averagingDouble(Integer::intValue));
 		System.out.println(avg);				// 3.5
 		
+		IntSummaryStatistics summary = integerList.stream().collect(Collectors.summarizingInt(Integer::intValue));
+		System.out.println(summary);			// IntSummaryStatistics{count=6, sum=21, min=1, average=3.500000, max=6}
+		
 		System.out.println(
 				stringList.stream().collect(Collectors.joining(", ", "<", ">")));					
 		// <User1, User3, User4, User2, User111>
 		
 		total = integerList.stream().collect(Collectors.reducing(100, Integer::intValue, Math::addExact));
+		System.out.println(total);				// 121
+		total = integerList.stream().map(Integer::intValue).reduce(Integer::sum).get();
+		System.out.println(total);				// 121
+		total = integerList.stream().mapToInt(Integer::intValue).sum();
 		System.out.println(total);				// 121
 		
 		
