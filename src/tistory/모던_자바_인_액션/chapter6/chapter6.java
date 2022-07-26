@@ -5,12 +5,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -191,15 +193,91 @@ public class chapter6 {
 		};
 		
 		
-		
-		
-		
-		
-		
-		
-		
-		
 		System.out.println("\n>> 6.6 커스텀 컬렉터를 구현해서 성능 개선하기");
+		
+		BiFunction<List<Integer>, Integer, Boolean> primeFunction;
+		primeFunction = new BiFunction<List<Integer>, Integer, Boolean>(){
+			public Boolean apply(List<Integer> list, Integer input) {
+				return list.stream().takeWhile(i -> i <= (int)Math.sqrt(input)).noneMatch(i -> input%i==0);
+			}
+		};
+		Collector<Integer, Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>> primeCollector;
+		
+		// 1단계 : 시그니처 정의
+		primeCollector = new Collector<Integer, Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>>() {
+			// 2단계 : 리듀싱 연산
+			@Override
+			public Supplier<Map<Boolean, List<Integer>>> supplier() {
+				return () -> new HashMap<Boolean, List<Integer>>(){{
+					put(true, new ArrayList<Integer>());
+					put(false, new ArrayList<Integer>());
+				}};
+			}
+			@Override
+			public BiConsumer<Map<Boolean, List<Integer>>, Integer> accumulator() {
+				return (acc, candidate) -> 
+				{
+					acc.get(primeFunction.apply(acc.get(true), candidate)).add(candidate);
+				};
+			}
+			
+			// 3단계 : 병렬 실행할 수 있는 컬렉터 만들기(순서가 무의미한 경우에 한해)
+			@Override
+			public BinaryOperator<Map<Boolean, List<Integer>>> combiner() {
+				return (map1, map2) ->
+				{
+					map1.get(true).addAll(map2.get(true));
+					map1.get(false).addAll(map2.get(false));
+					return map1;
+				};
+			}
+			
+			// 4단계 : finisher 메서드와 컬렉터의 characteristics 메서드
+			@Override
+			public Function<Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>> finisher() {
+				return Function.identity();
+			}
+			@Override
+			public Set<Characteristics> characteristics() {
+				return Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH));
+			}
+		};
+		
+		Map<Boolean, List<Integer>> primeMap;
+		primeMap = IntStream.rangeClosed(2, 30).boxed()
+					.collect(primeCollector);
+		System.out.println(primeMap.get(true));
+		// [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+		System.out.println(primeMap.get(false));
+		// [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 30]
+		
+		Function<Integer, Map<Boolean, List<Integer>>> contraction;
+		contraction = new Function<Integer, Map<Boolean, List<Integer>>>(){
+			public Map<Boolean, List<Integer>> apply(Integer n) {
+				return IntStream.rangeClosed(2, n).boxed()
+						.collect(
+								() -> new HashMap<Boolean, List<Integer>>(){{
+									put(true, new ArrayList<Integer>());
+									put(false, new ArrayList<Integer>());
+								}},
+								(acc, candidate) -> 
+								{
+									acc.get(primeFunction.apply(acc.get(true), candidate)).add(candidate);
+								},
+								(map1, map2) ->
+								{
+									map1.get(true).addAll(map2.get(true));
+									map1.get(false).addAll(map2.get(false));
+								});
+			}
+		};
+		primeMap = contraction.apply(30);
+		System.out.println(primeMap.get(true));
+		// [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+		System.out.println(primeMap.get(false));
+		// [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 30]
+		
+		
 	}
 }
 
