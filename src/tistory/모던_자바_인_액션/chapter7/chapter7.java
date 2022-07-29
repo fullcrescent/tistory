@@ -1,10 +1,13 @@
 package tistory.모던_자바_인_액션.chapter7;
 
+import java.util.Spliterator;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
+import java.util.function.Consumer;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class chapter7 {
 	public static void main(String[] args) {
@@ -38,6 +41,8 @@ public class chapter7 {
 		long answer = new ForkJoinPool().invoke(task);
 		System.out.println(answer);
 		
+		Spliterator<Character> spliterator = new WorCounnterSpliterator("A B C DEFG");
+		Stream<Character> stream = StreamSupport.stream(spliterator, true);
 		
 		System.out.println("\n>> 7.3 Spliterator 인터페이스");
 
@@ -84,6 +89,49 @@ class ForkJoinSum extends RecursiveTask<Long>{
 			sum += numbers[i];
 		}
 		return sum;
+	}
+}
+
+class WorCounnterSpliterator implements Spliterator<Character>{
+	private final String string;
+	private int currentChar = 0;
+	
+	public WorCounnterSpliterator(String string) {
+		this.string = string;
+	}
+
+	@Override
+	public boolean tryAdvance(Consumer<? super Character> action) {
+		action.accept(string.charAt(currentChar++));
+		return currentChar < string.length();
+	}
+
+	@Override
+	public Spliterator<Character> trySplit() {
+		int currentSize = string.length() - currentChar;
+		if(currentSize<10) {
+			return null;
+		}
+
+		for(int splitPos = currentSize/2+currentChar; splitPos<string.length();splitPos++) {
+			if(Character.isWhitespace(string.charAt(splitPos))) {
+				Spliterator<Character> spliterator = new WorCounnterSpliterator(string.substring((currentChar), splitPos));
+				currentChar = splitPos;
+				return spliterator;
+			}
+		}
+		
+		return null;
+	}
+
+	@Override
+	public long estimateSize() {
+		return string.length()-currentChar;
+	}
+
+	@Override
+	public int characteristics() {
+		return ORDERED + SIZED + SUBSIZED + NONNULL + IMMUTABLE;
 	}
 	
 }
