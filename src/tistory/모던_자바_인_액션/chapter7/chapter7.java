@@ -41,11 +41,12 @@ public class chapter7 {
 		long answer = new ForkJoinPool().invoke(task);
 		System.out.println(answer);
 		
-		Spliterator<Character> spliterator = new WorCounnterSpliterator("A B C DEFG");
-		Stream<Character> stream = StreamSupport.stream(spliterator, true);
 		
 		System.out.println("\n>> 7.3 Spliterator 인터페이스");
-
+		Spliterator<Character> spliterator = new WorCounnterSpliterator("A B C DEFG HI JK");
+		Stream<Character> stream = StreamSupport.stream(spliterator, true);
+		WordCounter wordCounter = stream.reduce(new WordCounter(0, true), WordCounter::accumulate, WordCounter::combine);
+		System.out.println(wordCounter.getCounter());
 		
 	}
 }
@@ -92,6 +93,32 @@ class ForkJoinSum extends RecursiveTask<Long>{
 	}
 }
 
+class WordCounter {
+	private final int counter;
+	private final boolean lastSpace;
+	
+	public WordCounter(int counter, boolean lastSpace) {
+		super();
+		this.counter = counter;
+		this.lastSpace = lastSpace;
+	}
+	
+	public WordCounter accumulate(Character c) {
+		if(Character.isWhitespace(c)) {
+			return lastSpace ? this : new WordCounter(counter, true);
+		}
+		else {
+			return lastSpace ? new WordCounter(counter+1, false) : this;
+		}
+	}
+	public WordCounter combine(WordCounter wordCounter) {
+		return new WordCounter(counter + wordCounter.counter, wordCounter.lastSpace);
+	}
+	public int getCounter() {
+		return counter;
+	}
+}
+
 class WorCounnterSpliterator implements Spliterator<Character>{
 	private final String string;
 	private int currentChar = 0;
@@ -133,5 +160,6 @@ class WorCounnterSpliterator implements Spliterator<Character>{
 	public int characteristics() {
 		return ORDERED + SIZED + SUBSIZED + NONNULL + IMMUTABLE;
 	}
-	
 }
+
+
