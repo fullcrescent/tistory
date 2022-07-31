@@ -25,7 +25,7 @@ public class Chapter7 {
 		// 0+1=1 1+2=3 3+3=6 6+4=10 10+5=15 15+6=21 21+7=28 28+8=36 36+9=45 45+10=55 55
 		
 		System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "2");
-		// 스트림의 parallel 메서드에서 스레드 생성 갯수 설정
+		// 스트림의 parallel 메서드에서 스레드 생성 개수 설정
 		// 기본값(권장)은 기기의 프로세서 수로 세팅
 		long sum2 = Stream.iterate(1L, i -> i+1)
 				.limit(n)
@@ -36,7 +36,7 @@ public class Chapter7 {
 				});
 		System.out.println(sum2);
 		// 0+7=7 0+3=3 0+5=5 0+4=4 4+5=9 0+6=6 3+9=12 6+7=13 0+2=2 0+9=9 0+1=1 0+10=10 1+2=3 9+10=19 3+12=15 0+8=8 8+19=27 13+27=40 15+40=55 55+0=55 55
-		// 위의 parallelism 값을 1로 바꿀 시 아래처럼 더 짧게 출력(0과 더하는 갯수가 줄어듬) 
+		// 위의 parallelism 값을 1로 바꿀 시 아래처럼 더 짧게 출력(0과 더하는 개수가 줄어듬) 
 		// 0+6=6 6+7=13 0+9=9 9+10=19 0+8=8 8+19=27 13+27=40 0+3=3 0+4=4 4+5=9 3+9=12 0+1=1 1+2=3 3+12=15 15+40=55 55+0=55 55
 		
 //		System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "1");
@@ -87,10 +87,11 @@ public class Chapter7 {
 		//21 msecs
 		
 		System.out.println("\n>> 7.3 Spliterator 인터페이스");
+		
 		Spliterator<Character> spliterator = new WorCounnterSpliterator("A B C DEFG HI JK");
 		Stream<Character> stream = StreamSupport.stream(spliterator, true);
 		WordCounter wordCounter = stream.reduce(new WordCounter(0, true), WordCounter::accumulate, WordCounter::combine);
-		System.out.println(wordCounter.getCounter());
+		System.out.println(wordCounter.getCounter());		// 6
 		
 	}
 	
@@ -199,22 +200,22 @@ class WorCounnterSpliterator implements Spliterator<Character>{
 
 	@Override
 	public boolean tryAdvance(Consumer<? super Character> action) {
-		action.accept(string.charAt(currentChar++));
-		return currentChar < string.length();
+		action.accept(string.charAt(currentChar++));	// 현재 문자 소비
+		return currentChar < string.length();			// 소비할 문자 있는지 판단
 	}
 
 	@Override
 	public Spliterator<Character> trySplit() {
 		int currentSize = string.length() - currentChar;
-		if(currentSize<10) {
+		if(currentSize<10) {	// if문을 기준으로 순차처리할 만큼 작아 졌음을 판단
 			return null;
 		}
 
-		for(int splitPos = currentSize/2+currentChar; splitPos<string.length();splitPos++) {
-			if(Character.isWhitespace(string.charAt(splitPos))) {
-				Spliterator<Character> spliterator = new WorCounnterSpliterator(string.substring((currentChar), splitPos));
-				currentChar = splitPos;
-				return spliterator;
+		for(int splitPosition=currentSize/2+currentChar; splitPosition<string.length(); splitPosition++) {
+			if(Character.isWhitespace(string.charAt(splitPosition))) {	// 공백 단위로 분할
+				Spliterator<Character> spliterator = new WorCounnterSpliterator(string.substring(currentChar, splitPosition));
+				currentChar = splitPosition;
+				return spliterator;			// 새로 만든 Spliterator 반환
 			}
 		}
 		
@@ -222,12 +223,12 @@ class WorCounnterSpliterator implements Spliterator<Character>{
 	}
 
 	@Override
-	public long estimateSize() {
+	public long estimateSize() {			// 탐색해야할 요소의 개수를 의미
 		return string.length()-currentChar;
 	}
 
 	@Override
-	public int characteristics() {
+	public int characteristics() {			// 프레임워크에 Spliterator의 특성을 알려줌.
 		return ORDERED + SIZED + SUBSIZED + NONNULL + IMMUTABLE;
 	}
 }
