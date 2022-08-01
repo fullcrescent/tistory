@@ -36,6 +36,7 @@ public class Chapter8 {
 		set = Stream.of("user1", "user2", "user3").collect(Collectors.toSet());
 		System.out.println(set);		// [user1, user2, user3]
 		
+		
 		System.out.println("\n>> 8.2 리스트와 집합 처리");
 		
 		
