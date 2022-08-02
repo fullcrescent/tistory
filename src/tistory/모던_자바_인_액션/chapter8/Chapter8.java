@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +36,22 @@ public class Chapter8 {
 		
 		set = Stream.of("user1", "user2", "user3").collect(Collectors.toSet());
 		System.out.println(set);		// [user1, user2, user3]
+		
+		list = List.of("user~~", "user2");
+//		list.set(0, "user1");			// java.lang.UnsupportedOperationException
+//		list.add("user3");				// java.lang.UnsupportedOperationException
+		System.out.println(list);		// [user~~, user2]
+		
+		set = Set.of("user1", "user2");
+//		set.add("user3");				// java.lang.UnsupportedOperationException
+		System.out.println(set);
+		
+		Map<String, Integer> map = Map.of("user1", 111, "user2", 222, "user3", 333);
+		System.out.println(map);		// {user2=222, user1=111, user3=333}
+		
+		// 열개 초과의 키와 값 쌍을 가진맵을 인수로 받을때
+		map = Map.ofEntries(Map.entry("user1", 111), Map.entry("user2", 222), Map.entry("user3", 333));
+		System.out.println(map);		// {user3=333, user2=222, user1=111}
 		
 		
 		System.out.println("\n>> 8.2 리스트와 집합 처리");
