@@ -3,6 +3,7 @@ package tistory.모던_자바_인_액션.chapter8;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +57,26 @@ public class Chapter8 {
 		
 		System.out.println("\n>> 8.2 리스트와 집합 처리");
 		
+		
+		list = new ArrayList<>();
+		list.add("user1");
+		list.add("user2");
+		list.add("user3");
+		
+//		for(String s : list) {
+//			list.remove(s);		// java.util.ConcurrentModificationException
+//		}
+		
+//		for(Iterator<String> iterator = list.iterator(); iterator.hasNext(); ) {
+//			String s = iterator.next();
+//			list.remove(s);					// java.util.ConcurrentModificationException
+//		}
+		
+		for(Iterator<String> iterator = list.iterator(); iterator.hasNext(); ) {
+			iterator.next();
+			iterator.remove();
+		}
+			
 		
 		System.out.println("\n>> 8.3 맵 처리");
 		
