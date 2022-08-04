@@ -76,7 +76,15 @@ public class Chapter8 {
 			iterator.next();
 			iterator.remove();
 		}
-			
+		System.out.println(list);				// []
+		
+		list.add("user1");
+		list.add("user2");
+		list.add("user3");
+		
+		list.removeIf(i -> i.equals("user1") || i.equals("user3"));
+		System.out.println(list);				// [user2]
+		
 		
 		System.out.println("\n>> 8.3 맵 처리");
 		
