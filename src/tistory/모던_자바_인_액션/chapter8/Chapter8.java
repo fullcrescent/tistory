@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,7 +58,6 @@ public class Chapter8 {
 		
 		System.out.println("\n>> 8.2 리스트와 집합 처리");
 		
-		
 		list = new ArrayList<>();
 		list.add("user1");
 		list.add("user2");
@@ -84,6 +84,25 @@ public class Chapter8 {
 		
 		list.removeIf(i -> i.equals("user1") || i.equals("user3"));
 		System.out.println(list);				// [user2]
+		
+		list = new ArrayList<>();
+		list.add("user1");
+		list.add("user2");
+		list.add("user3");
+		
+		System.out.println(
+			list.stream()
+				.map(i -> i.replaceAll("user", "replace"))
+				.collect(Collectors.toList()));					// [replace1, replace2, replace3]
+		
+		for(ListIterator<String> iterator = list.listIterator();iterator.hasNext();) {
+			String temp = iterator.next();
+			iterator.set(temp.replaceAll("replace", "user"));	
+		}
+		System.out.println(list);		// [user1, user2, user3]
+		
+		list.replaceAll(i -> i.replaceAll("user", "replace"));
+		System.out.println(list);		// [replace1, replace2, replace3]
 		
 		
 		System.out.println("\n>> 8.3 맵 처리");
