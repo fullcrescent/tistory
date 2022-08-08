@@ -32,6 +32,7 @@ public class Chapter9 {
 		runnable.run();					// 0
 		
 		
+		
 		System.out.println("\n>> 9.2 람다로 객체지향 디자인 패턴 리팩터링하기");
 		
 		
