@@ -1,5 +1,9 @@
 package tistory.모던_자바_인_액션.chapter9;
 
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -13,6 +17,9 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
 
 public class Chapter9 {
 
@@ -161,17 +168,64 @@ Function<User, User> pipeline = nameProcess.andThen(ageProcess);
 pipeline.apply(temp);
 System.out.println(temp);	// User [name=tempUser Process Success~~~~~, age=100]
 
+Human human;
+/* 람다 X */
+human = HumanFactory.createHuman("employer");
+System.out.println(human.getClass().getSimpleName());	// Employer
 
-
+/* 람다 O */
+human = HumanFactory.createHumanLambda("employee");
+System.out.println(human.getClass().getSimpleName());	// Employee
 
 
 System.out.println("\n>> 9.3 람다 테스팅");
 
 
-
 System.out.println("\n>> 9.4 디버깅");
+
+List<Integer> list = Arrays.asList(1, 2, 3, 4);
+System.out.println(
+	list.stream()
+		.peek(i -> System.out.println("1:" + i))
+		.map(i -> i*10)
+		.peek(i -> System.out.println("2:" + i))
+		.filter(i -> i % 3 == 0)
+		.peek(i -> System.out.println("3:" + i))
+		.limit(3)
+		.peek(i -> System.out.println("4:" + i))
+		.collect(toList())
+	);
+// 1:1
+// 2:10
+// 1:2
+// 2:20
+// 1:3
+// 2:30
+// 3:30
+// 4:30
+// 1:4
+// 2:40
+// [30]
 }
 
+@Test
+public void testCompareUser() throws Exception{
+	List<User> userList = new ArrayList<>(Arrays.asList(
+			new User("User1", 10)
+			,new User("User2", 20)
+			,new User("User5", 50)
+			,new User("User3", 30)
+			,new User("User4", 40)
+		)
+	);
+	
+	List<Integer> more = userList.stream().map(i -> i.getAge()).filter(i -> i>30).toList();
+	List<Integer> less = userList.stream().map(i -> i.getAge()).filter(i -> i<30).toList();
+	
+	assertEquals(Arrays.asList(50, 40), more);
+	assertEquals(Arrays.asList(10, 20), less);
+}
+	
 /* 람다를 사용할 메소드 */
 public static void process(User User, Consumer<User> grow) {
 	grow.accept(User);
@@ -190,32 +244,29 @@ interface Human{};
 class Employer implements Human {};
 class Employee implements Human {};
 
-class UserFactory{
+class HumanFactory{
 	final static private Map<String, Supplier<Human>> factoryMap = new HashMap<>();
 	static {
 		factoryMap.put("employer", Employer::new);
-		factoryMap.put("Employee", Employee::new);
+		factoryMap.put("employee", Employee::new);
 	}
 	
-	public static Human createUser(String type) {
+	public static Human createHuman(String type) {
 		switch(type) {
 			case "employer" : return new Employer();
 			case "employee" : return new Employee();
-			default : throw new RuntimeException("No such User");
+			default : throw new RuntimeException("No such Human");
 		}
 	}
 	
-	public static Human createUserLambda(String type) {
+	public static Human createHumanLambda(String type) {
 		Supplier<Human> s = factoryMap.get(type);
 		if(s==null) {
-			throw new RuntimeException("No such User");
+			throw new RuntimeException("No such Human");
 		}
 		return s.get();
 	}
 }
-
-
-
 
 
 abstract class Process<T>{
