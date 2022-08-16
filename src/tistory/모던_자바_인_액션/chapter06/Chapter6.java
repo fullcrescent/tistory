@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter6;
+package tistory.모던_자바_인_액션.chapter06;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class chapter6 {
+public class Chapter6 {
 
 	public static void main(String[] args) {
 		System.out.println("\n>> 6.1 컬렉터란 무엇인가?");

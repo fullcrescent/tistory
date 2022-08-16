@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter4;
+package tistory.모던_자바_인_액션.chapter04;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class chapter4 {
+public class Chapter4 {
 	public static void main(String[] args) {
 		List<User> userList = new ArrayList<>(Arrays.asList(
 				new User("User1", 10)

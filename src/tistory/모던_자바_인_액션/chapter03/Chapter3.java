@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter3;
+package tistory.모던_자바_인_액션.chapter03;
 
 import static java.util.Comparator.comparing;
 
@@ -18,7 +18,7 @@ import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class chapter3 {
+public class Chapter3 {
 
 	public static void main(String[] args) throws IOException {
 		Interface1 i1 = new Interface1() {		// 익명 클래스 생성

@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter9;
+package tistory.모던_자바_인_액션.chapter09;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter7;
+package tistory.모던_자바_인_액션.chapter07;
 
 import java.util.Spliterator;
 import java.util.concurrent.ForkJoinPool;

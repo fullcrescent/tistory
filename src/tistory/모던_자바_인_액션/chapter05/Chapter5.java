@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter5;
+package tistory.모던_자바_인_액션.chapter05;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class chapter5 {
+public class Chapter5 {
 
 	public static void main(String[] args) {
 		System.out.println("\n>> 5.1 필터링");

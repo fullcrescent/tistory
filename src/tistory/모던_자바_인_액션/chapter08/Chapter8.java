@@ -1,4 +1,4 @@
-package tistory.모던_자바_인_액션.chapter8;
+package tistory.모던_자바_인_액션.chapter08;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
