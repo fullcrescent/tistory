@@ -35,4 +35,8 @@ public class Trade {
 	public double getValue() {
 		return quantity * price;
 	}
+	
+	public String toString() {
+		return String.format("Trade[type=%s, stock=%s, quantity=%d, price=%.2f]", type, stock, quantity, price);
+	}
 }

@@ -16,5 +16,8 @@ public class Stock {
 	public void setMarket(String market) {
 		this.market = market;
 	}
-	
+
+	public String toString() {
+		return String.format("Stock[symbol=%s, market=%s]", symbol, market);
+	}
 }
