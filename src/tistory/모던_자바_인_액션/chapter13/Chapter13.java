@@ -9,7 +9,10 @@ public class Chapter13 {
 		System.out.println("\n>> 13 디폴트 메서드");
 		System.out.println("\n>> 13.1 변화하는 API");
 		
-		List<Resizable> list = Arrays.asList(null);
+		List<Resizable> list = Arrays.asList(new Ellipse(), new Ellipse(), new Ellipse());
+		Utils.paint(list);
+		
+		
 		
 		System.out.println("\n>> 13.2 디폴트 메서드란 무엇인가?");
 		
