@@ -1,6 +1,10 @@
 package tistory.모던_자바_인_액션.chapter15;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
@@ -29,10 +33,18 @@ public class Chapter15 {
 		ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 		
 		work1();
-		
+//		Thread.sleep(10000);		지정된 시간동안 스레드의 자원을 점유하여 다른 작업이 실행되지 못함
 		scheduledExecutorService.schedule(Chapter15::work2, 10, TimeUnit.SECONDS);
 		scheduledExecutorService.shutdown();
 		
+		Callback c1 = new Callback("C1");
+		Callback c2 = new Callback("C2");
+		Callback c3 = new Callback("C3");
+		
+		c1.subscribe(c3);
+		
+		c1.onNext(10);
+		c2.onNext(20);
 		
 		System.out.println("\n>> 15.3 박스와 채널 모델");
 		System.out.println("\n>> 15.4 CompletableFuture와 콤비네이터를 이용한 동시성");
@@ -55,6 +67,8 @@ public class Chapter15 {
 	public static void work2() {
 		System.out.println("Work2");
 	}
+	
+	
 }
 
 class Result{
@@ -69,5 +83,43 @@ class Function{
 	
 	public static int g(int x) {
 		return x+1;
+	}
+}
+
+class Callback implements Subscriber<Integer>{
+	private int value = 0;
+	private String name;
+	private List<Subscriber<Integer>> subscribers = new ArrayList<>();
+	
+	public Callback(String name) {
+		this.name = name;
+	}
+	
+	public void subscribe(Subscriber<Integer> subscriber) {
+		subscribers.add(subscriber);
+	}
+	
+	@Override
+	public void onNext(Integer item) {
+		value = item;
+		System.out.println(name + ":" + value);
+		notifyAllSubscribers();
+	}
+	
+	private void notifyAllSubscribers() {
+		subscribers.forEach(subscriber -> subscriber.onNext(value));
+	}
+	
+	@Override
+	public void onSubscribe(Subscription subscription) {}
+
+	@Override
+	public void onError(Throwable throwable) {
+		throwable.printStackTrace();
+	}
+
+	@Override
+	public void onComplete() {
+		System.out.println("아무 이벤트도 일어나지 않음");
 	}
 }
