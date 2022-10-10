@@ -2,6 +2,7 @@ package tistory.모던_자바_인_액션.chapter15;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,7 +22,12 @@ System.out.println("\n>> 15.1 동시성을 구현하는 자바 지원의 진화"
 System.out.println("\n>> 15.2 동기 API와 비동기 API");
 		
 int x = 10;
-Result result1, result2, result3;
+Result result1, result4;
+
+// 기본 형태
+int y = Function.f(x);
+int z = Function.g(x);
+System.out.println(y+z);
 
 // Thread
 result1 = new Result();
@@ -34,24 +40,26 @@ t2.join();
 System.out.println(result1.left + result1.right);
 
 // ExecutorService
-result2 = new Result();
 ExecutorService executorService = Executors.newFixedThreadPool(2);
 Future<Integer> y2 = executorService.submit(() -> Function.f(x));
 Future<Integer> z2 = executorService.submit(() -> Function.g(x));
 System.out.println(y2.get() + z2.get());
-executorService.shutdown();
 
-// 리액티브 형식
-result3 = new Result();
-f(x, y3 -> {
-	result3.left = y3;
-	System.out.println(result3.left + result3.right);
-});
-g(x, z3 ->{
-	result3.right = z3;
-	System.out.println(result3.left + result3.right);
-});
+// Future 형식 API
+Future<Integer> y3 = Function.ff(x);
+Future<Integer> z3 = Function.gg(x);
+System.out.println(y3.get() + z3.get());
 
+// 리액티브 형식 API
+result4 = new Result();
+f(x, y4 -> {
+	result4.left = y4;
+	System.out.println(result4.left + result4.right);
+});
+g(x, z4 ->{
+	result4.right = z4;
+	System.out.println(result4.left + result4.right);
+});
 
 ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
@@ -59,6 +67,29 @@ work1();
 //Thread.sleep(10000);		지정된 시간동안 스레드의 자원을 점유하여 다른 작업이 실행되지 못함
 scheduledExecutorService.schedule(Chapter15::work2, 5, TimeUnit.SECONDS);
 scheduledExecutorService.shutdown();
+
+System.out.println("\n>> 15.3 박스와 채널 모델");
+
+// 다이어 그램을 구현
+int t;
+
+// 문제점 : 병렬성 X
+t = Function.p(0);
+System.out.println(Function.r(Function.f(t), Function.g(t)));
+
+// 문제점 : p와 r을 Future로 감싸지 않음
+t = Function.p(0);
+Future<Integer> f1 = executorService.submit(() -> Function.f(x));
+Future<Integer> f2 = executorService.submit(() -> Function.g(x));
+System.out.println(Function.r(f1.get(), f2.get()));
+
+
+
+
+System.out.println("\n>> 15.4 CompletableFuture와 콤비네이터를 이용한 동시성");
+System.out.println("\n>> 15.5 발행-구독 그리고 리액티브 프로그래밍");
+System.out.println("\n>> 15.6 리액티브 시스템 vs 리액티브 프로그래밍");
+
 
 Callback c1 = new Callback("C1");
 Callback c2 = new Callback("C2");
@@ -69,10 +100,8 @@ c1.subscribe(c3);
 c1.onNext(10);
 c2.onNext(20);
 
-System.out.println("\n>> 15.3 박스와 채널 모델");
-System.out.println("\n>> 15.4 CompletableFuture와 콤비네이터를 이용한 동시성");
-System.out.println("\n>> 15.5 발행-구독 그리고 리액티브 프로그래밍");
-System.out.println("\n>> 15.6 리액티브 시스템 vs 리액티브 프로그래밍");
+
+executorService.shutdown();
 }
 	
 private static void f(int x, IntConsumer dealWithResult) {
@@ -108,6 +137,22 @@ class Function{
 	
 	public static int g(int x) {
 		return x+1;
+	}
+	
+	public static Future<Integer> ff(int x){
+		return new CompletableFuture<Integer>().completeAsync(() -> Integer.valueOf(x*2));
+	}
+	
+	public static Future<Integer> gg(int x){
+		return new CompletableFuture<Integer>().completeAsync(() -> Integer.valueOf(x+1));
+	}
+	
+	public static int p(int x) {
+		return 10;
+	}
+	
+	public static int r(int x, int y) {
+		return x*y;
 	}
 }
 
