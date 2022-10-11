@@ -6,11 +6,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 public class Chapter15 {
@@ -84,21 +86,92 @@ Future<Integer> f2 = executorService.submit(() -> Function.g(x));
 System.out.println(Function.r(f1.get(), f2.get()));
 
 
-
-
 System.out.println("\n>> 15.4 CompletableFuture와 콤비네이터를 이용한 동시성");
+
+executorService = Executors.newFixedThreadPool(10);
+
+int x4_1 = 10;
+CompletableFuture<Integer> a_1 = new CompletableFuture<>();
+executorService.submit(() -> a_1.complete(Function.f(x4_1)));
+int b_1 = Function.g(x4_1);
+System.out.println(a_1.get()+b_1);
+
+int x4_2 = 10;
+CompletableFuture<Integer> a_2 = new CompletableFuture<>();
+CompletableFuture<Integer> b_2 = new CompletableFuture<>();
+CompletableFuture<Integer> c_2 = a_2.thenCombine(b_2, (y4_2, z4_2) -> y4_2+z4_2);
+executorService.submit(() -> a_2.complete(Function.f(x4_2)));
+executorService.submit(() -> b_2.complete(Function.g(x4_2)));
+System.out.println(c_2.get());
+
+
 System.out.println("\n>> 15.5 발행-구독 그리고 리액티브 프로그래밍");
+
+SimpleCell c1_1 = new SimpleCell("C1_1");
+SimpleCell c2_1 = new SimpleCell("C2_1");
+SimpleCell c3_1 = new SimpleCell("C3_1");
+
+c1_1.subscribe(c3_1);
+c1_1.onNext(10);
+c2_1.onNext(20);
+// C1_1:10
+// C3_1:10
+// C2_1:20
+System.out.println();
+
+SimpleCell c1_2 = new SimpleCell("C1_2");
+SimpleCell c2_2 = new SimpleCell("C2_2");
+ArithmeticCell c3_2 = new ArithmeticCell("C3_2");
+c1_2.subscribe(c3_2::setLeft);
+c2_2.subscribe(c3_2::setRight);
+
+c1_2.onNext(10);
+c2_2.onNext(20);
+c1_2.onNext(15);
+// C1_2:10
+// C3_2:10
+// C2_2:20
+// C3_2:30
+// C1_2:15
+// C3_2:35
+System.out.println();
+
+SimpleCell c1_3 = new SimpleCell("C1_3");
+SimpleCell c2_3 = new SimpleCell("C2_3");
+SimpleCell c4_3 = new SimpleCell("C4_3");
+ArithmeticCell c3_3 = new ArithmeticCell("C3_3");
+ArithmeticCell c5_3 = new ArithmeticCell("C5_3");
+
+c1_3.subscribe(c3_3::setLeft);
+c2_3.subscribe(c3_3::setRight);
+c3_3.subscribe(c5_3::setLeft);
+c4_3.subscribe(c5_3::setRight);
+
+c1_3.onNext(10);
+c2_3.onNext(20);
+c1_3.onNext(15);
+c4_3.onNext(1);
+c4_3.onNext(3);
+// C1_3:10
+// C3_3:10
+// C5_3:10
+// C2_3:20
+// C3_3:30
+// C5_3:30
+// C1_3:15
+// C3_3:35
+// C5_3:35
+// C4_3:1
+// C5_3:36
+// C4_3:3
+// C5_3:38
+System.out.println();
+
+
 System.out.println("\n>> 15.6 리액티브 시스템 vs 리액티브 프로그래밍");
 
 
-Callback c1 = new Callback("C1");
-Callback c2 = new Callback("C2");
-Callback c3 = new Callback("C3");
 
-c1.subscribe(c3);
-
-c1.onNext(10);
-c2.onNext(20);
 
 
 executorService.shutdown();
@@ -120,9 +193,6 @@ public static void work2() {
 	System.out.println("Work2");
 }
 
-private static void f(int x, Subscriber<Integer> s) {
-	s.onNext(x);
-}
 }
 
 class Result{
@@ -156,17 +226,40 @@ class Function{
 	}
 }
 
-class Callback implements Subscriber<Integer>{
+class SimpleCell implements Publisher<Integer>, Subscriber<Integer>{
 	private int value = 0;
 	private String name;
-	private List<Subscriber<Integer>> subscribers = new ArrayList<>();
+	private List<Subscriber<? super Integer>> subscribers = new ArrayList<>();
 	
-	public Callback(String name) {
+	public SimpleCell(String name) {
 		this.name = name;
 	}
 	
-	public void subscribe(Subscriber<Integer> subscriber) {
+	@Override
+	public void subscribe(Subscriber<? super Integer> subscriber) {
 		subscribers.add(subscriber);
+	}
+	
+	public void subscribe(Consumer<? super Integer> subscriber) {
+		subscribers.add(new Subscriber<>() {
+			@Override
+			public void onSubscribe(Subscription subscription) {}
+
+			@Override
+			public void onNext(Integer item) {
+				subscriber.accept(item);
+			}
+
+			@Override
+			public void onError(Throwable throwable) {
+				throwable.printStackTrace();
+			}
+
+			@Override
+			public void onComplete() {
+				System.out.println("아무 이벤트도 일어나지 않음");
+			}
+		});
 	}
 	
 	@Override
@@ -191,5 +284,24 @@ class Callback implements Subscriber<Integer>{
 	@Override
 	public void onComplete() {
 		System.out.println("아무 이벤트도 일어나지 않음");
+	}
+}
+
+class ArithmeticCell extends SimpleCell{
+	private int left;
+	private int right;
+	
+	public ArithmeticCell(String name) {
+		super(name);
+	}
+
+	public void setLeft(int left) {
+		this.left = left;
+		onNext(left+right);
+	}
+
+	public void setRight(int right) {
+		this.right = right;
+		onNext(right+left);
 	}
 }
