@@ -2,6 +2,7 @@ package tistory.모던_자바_인_액션.chapter16;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import tistory.모던_자바_인_액션.chapter16.Discount.Code;
+import tistory.모던_자바_인_액션.chapter16.ExchangeService.Money;
 
 public class Chapter16 {
 
@@ -81,8 +86,31 @@ duration(priceFinder::findPrices2);
 /* CompletableFuture로 비동기 호출 */
 duration(priceFinder::findPrices3);
 
+
+
 System.out.println("\n>> 16.4 비동기 작업 파이프라인 만들기");
+
+/* 순차 */
+duration(priceFinder::findPricesDiscount1);
+
+/* 병렬 스트림 */
+duration(priceFinder::findPricesDiscount2);
+
+/* CompletableFuture로 비동기 호출 */
+duration(priceFinder::findPricesDiscount3);
+
+
+/* 자바7 기준 */
+duration(priceFinder::findPricesInUSD1);
+
+/* 자바9 기준 */
+duration(priceFinder::findPricesInUSD2);
+
 System.out.println("\n>> 16.5 CompletableFuture의 종료에 대응하는 방법");
+
+new PriceFinder().print();
+
+
 	}
 
 private static void duration(Function<String, List<String>> f) {
@@ -96,11 +124,20 @@ private static void duration(Function<String, List<String>> f) {
 }
 
 class Util {
-	private static final DecimalFormat formatter = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.US));
+	private static Random random = new Random();
 	
 	public static void delay() {
 		try {
 			Thread.sleep(1000L);
+		}catch (InterruptedException e) {
+			throw new RuntimeException();
+		}
+	}
+
+	public static void randomDelay() {
+		int delay = 500 + random.nextInt(2000);
+		try {
+			Thread.sleep(delay);
 		}catch (InterruptedException e) {
 			throw new RuntimeException();
 		}
@@ -146,6 +183,12 @@ class Shop {
 		/* 위의 주석 된 소스와 동일 */
 		return CompletableFuture.supplyAsync(() -> calculatePrice(product));
 	}
+	
+	public String getInfo(String product) {
+		double price = calculatePrice(product);
+		Discount.Code code = Discount.Code.values()[random.nextInt((Discount.Code.values().length))];
+		return String.format("%s:%2f:%s", name, price, code);
+	}
 }
 
 class PriceFinder {
@@ -178,16 +221,201 @@ class PriceFinder {
 	
 	/* CompletableFuture로 비동기 호출 */
 	public List<String> findPrices3(String product){
-		List<CompletableFuture<String>> priceFutures = shops.stream()
+		List<CompletableFuture<String>> priceFutures = 
+				shops.stream()
 				.map(shop -> CompletableFuture.supplyAsync(() -> shop.getName() + " price is " + Math.round(shop.getPrice(product)), executor))
 				.collect(Collectors.toList());
 		
 		return priceFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
 	}
+	
+	/* 순차 */
+	public List<String> findPricesDiscount1(String product){
+		return shops.stream()
+				.map(shop -> shop.getInfo(product))
+				.map(Quote::parse)
+				.map(Discount::applyDiscount)
+				.collect(Collectors.toList());
+	}
+	
+	/* 병렬 스트림 */
+	public List<String> findPricesDiscount2(String product){
+		return shops.parallelStream()
+				.map(shop -> shop.getInfo(product))
+				.map(Quote::parse)
+				.map(Discount::applyDiscount)
+				.collect(Collectors.toList());
+	}
+	
+	/* CompletableFuture로 비동기 호출 */
+	public List<String> findPricesDiscount3(String product){
+		List<CompletableFuture<String>> priceFutures = 
+				shops.stream()
+				.map(shop -> CompletableFuture.supplyAsync(() -> shop.getInfo(product), executor))
+				.map(future -> future.thenApply(Quote::parse))
+				.map(future -> future.thenCompose(quote -> CompletableFuture.supplyAsync(() -> Discount.applyDiscount(quote), executor)))
+				.collect(Collectors.toList());
+		
+		return priceFutures.stream()
+				.map(CompletableFuture::join)
+				.collect(Collectors.toList());
+	}
+	
+	/* 자바7 기준 */
+	public List<String> findPricesInUSD1(String product) {
+		ExecutorService executor = Executors.newCachedThreadPool();
+		List<Future<String>> priceFutures = new ArrayList<>();
+		
+		for(Shop shop : shops) {
+			final Future<Double> futureRate = executor.submit(new Callable<Double>() {
+				public Double call() {
+					return ExchangeService.getRate(Money.EUR, Money.USD);
+				}
+			});
+			
+			Future<String> futurePriceInUSD = executor.submit(new Callable<String>() {
+				public String call() throws InterruptedException, ExecutionException {
+					double priceInEUR = shop.getPrice(product);
+					return shop.getName() + " price is " + priceInEUR * futureRate.get();
+				}
+			});
+			
+			priceFutures.add(futurePriceInUSD);
+		}
+		executor.shutdown();
+		
+		List<String> prices = new ArrayList<>();
+		
+		for(Future<String> priceFuture : priceFutures) {
+			try {
+				prices.add(priceFuture.get());
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return prices;
+	}
+	
+	/* 자바9 기준 */
+	public List<String> findPricesInUSD2(String product) {
+		List<CompletableFuture<String>> priceFutures = 
+				shops.stream()
+				.map(shop -> CompletableFuture.supplyAsync(() -> shop.getPrice(product))
+						.thenCombine(
+								CompletableFuture.supplyAsync(
+										() -> ExchangeService.getRate(Money.EUR, Money.USD))
+										.completeOnTimeout(ExchangeService.DEFAULT_RATE, 1, TimeUnit.SECONDS),
+								(price, rate) -> price * rate)
+						.orTimeout(3, TimeUnit.SECONDS)
+						.thenApply(price -> shop.getName() + " price is " + price))
+				.collect(Collectors.toList());
+		
+		return priceFutures.stream()
+				.map(CompletableFuture::join)
+				.collect(Collectors.toList());
+	}
+	
+	public Stream<CompletableFuture<String>> findPricesStream(String product){
+		return shops.stream()
+				.map(shop -> CompletableFuture.supplyAsync(() -> shop.getInfo(product), executor))
+				.map(future -> future.thenApply(Quote::parse))
+				.map(future -> future.thenCompose(quote -> CompletableFuture.supplyAsync(() -> Discount.applyDiscountRandomDelay(quote), executor)));
+	}
+	
+	public void print() {
+		long start = System.nanoTime();
+		CompletableFuture[] futures = findPricesStream("myPhone27S")
+				.map(f -> f.thenAccept(s -> System.out.println(s + " (done in " + ((System.nanoTime()-start)/1_000_000) + "msecs)")))
+				.toArray(size -> new CompletableFuture[size]);
+		
+		CompletableFuture.allOf(futures).join();
+		System.out.println("All shops have now responded in (" + ((System.nanoTime()-start)/1_000_000) + "msecs)");
+	}
+}
+
+class Quote{
+	private final String shopName;
+	private final double price;
+	private final Discount.Code discountCode;
+	
+	public Quote(String shopName, double price, Code discountCode) {
+		super();
+		this.shopName = shopName;
+		this.price = price;
+		this.discountCode = discountCode;
+	}
+	
+	public static Quote parse(String s) {
+		String[] split = s.split(":");
+		String shopName = split[0];
+		double price = Double.parseDouble(split[1]);
+		Discount.Code discountCode = Discount.Code.valueOf(split[2]);
+		return new Quote(shopName, price, discountCode);
+	}
+
+	public String getShopName() {
+		return shopName;
+	}
+
+	public double getPrice() {
+		return price;
+	}
+
+	public Discount.Code getDiscountCode() {
+		return discountCode;
+	}
 }
 
 class Discount{
 	public enum Code{
+		NONE(0), SILVER(5), GOLD(10), PLATINUM(15), DIAMOND(20);
 		
+		private final int percentage;
+		
+		Code(int percentage){
+			this.percentage = percentage;
+		}
+	}
+	
+	public static String applyDiscount(Quote quote) {
+		return quote.getShopName() + " price is " + Discount.applyDiscount(quote.getPrice(), quote.getDiscountCode());
+	}
+
+	private static double applyDiscount(double price, Code discountCode) {
+		Util.delay();
+		return Math.round(price * (100 - discountCode.percentage)/100);
+	}
+	
+	public static String applyDiscountRandomDelay(Quote quote) {
+		return quote.getShopName() + " price is " + Discount.applyDiscountRandomDelay(quote.getPrice(), quote.getDiscountCode());
+	}
+
+	private static double applyDiscountRandomDelay(double price, Code discountCode) {
+		Util.randomDelay();
+		return Math.round(price * (100 - discountCode.percentage)/100);
+	}
+}
+
+class ExchangeService{
+	public static final double DEFAULT_RATE = 1.35;
+	
+	public enum Money{
+		USD(1.0), EUR(1.35387), GBP(1.69715), CAD(.92106), MXN(.07683);
+		
+		private final double rate;
+		
+		Money(double rate){
+			this.rate = rate;
+		}
+	}
+	
+	public static double getRate(Money source, Money destination) {
+		return getRateWithDelay(source, destination);
+	}
+
+	private static double getRateWithDelay(Money source, Money destination) {
+		Util.delay();
+		return destination.rate/source.rate;
 	}
 }
