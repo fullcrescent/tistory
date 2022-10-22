@@ -1,18 +1,31 @@
 package tistory.모던_자바_인_액션.chapter17;
 
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Flow.Processor;
+import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 
 public class Chapter17 {
 
-	public static void main(String[] args) {
-		System.out.println("\n>> 17 리액티브 프로그래밍");
-		
-		System.out.println("\n>> 17.1 리액티브 매니패스토");
-		System.out.println("\n>> 17.2 리액티브 스트림과 플로 API");
-		System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
-	}
+public static void main(String[] args) {
+System.out.println("\n>> 17 리액티브 프로그래밍");
+
+System.out.println("\n>> 17.1 리액티브 매니패스토");
+System.out.println("\n>> 17.2 리액티브 스트림과 플로 API");
+
+getTemperatures("New York").subscribe(new TempSubscriber());
+
+System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
+}
+
+private static Publisher<TempInfo> getTemperatures(String town){
+	return subscriber -> subscriber.onSubscribe(new TempSubscription(subscriber, town));
+}
+
+
 
 }
 
@@ -28,7 +41,7 @@ class TempInfo{
 	}
 	
 	public static TempInfo fetch(String town) {
-		if(random.nextInt(10)==0) throw new RuntimeException();
+//		if(random.nextInt(10)==0) throw new RuntimeException("Error Message");
 		
 		return new TempInfo(town, random.nextInt(100));
 	}
@@ -50,7 +63,7 @@ class TempInfo{
 class TempSubscription implements Subscription{
 	private final Subscriber<? super TempInfo> subscriber;
 	private final String town;
-	
+	private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 	
 	public TempSubscription(Subscriber<? super TempInfo> subscriber, String town) {
 		this.subscriber = subscriber;
@@ -59,14 +72,26 @@ class TempSubscription implements Subscription{
 
 	@Override
 	public void request(long n) {
-		for(long i = 0L; i<n; i++) {
-			try {
-				subscriber.onNext(TempInfo.fetch(town));
-			}catch(Exception e) {
-				subscriber.onError(e);
-				break;
+//		에러를 일부러 발생시키지 않을시 재귀 호출으로 스택이 오버플로 될때까지 반복해서 일어남		
+//		for(long i = 0L; i<n; i++) {
+//			try {
+//				subscriber.onNext(TempInfo.fetch(town));
+//			}catch(Exception e) {
+//				subscriber.onError(e);
+//				break;
+//			}
+//		}
+		executor.submit(() ->{
+			for(long i = 0L; i<n; i++) {
+				try {
+					subscriber.onNext(TempInfo.fetch(town));
+				}catch(Exception e) {
+					subscriber.onError(e);
+					break;
+				}
 			}
-		}
+		});
+		
 	}
 
 	@Override
@@ -100,5 +125,33 @@ class TempSubscriber implements Subscriber<TempInfo>{
 	public void onComplete() {
 		System.out.println("Done!");
 	}
+}
+
+class TempProcessor implements Processor<TempInfo, TempInfo>{
+	private Subscriber<? super TempInfo> subscriber;
 	
+	@Override
+	public void onSubscribe(Subscription subscription) {
+		subscriber.onSubscribe(subscription);
+	}
+
+	@Override
+	public void onNext(TempInfo item) {
+		subscriber.onNext(new TempInfo(item.getTown(), (item.getTemp()-32)*5/9));
+	}
+
+	@Override
+	public void onError(Throwable throwable) {
+		subscriber.onError(throwable);
+	}
+
+	@Override
+	public void onComplete() {
+		subscriber.onComplete();
+	}
+
+	@Override
+	public void subscribe(Subscriber<? super TempInfo> subscriber) {
+		this.subscriber = subscriber;
+	}
 }
