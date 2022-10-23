@@ -17,6 +17,7 @@ System.out.println("\n>> 17.1 리액티브 매니패스토");
 System.out.println("\n>> 17.2 리액티브 스트림과 플로 API");
 
 getTemperatures("New York").subscribe(new TempSubscriber());
+getCelsiusTemperatures("New York").subscribe(new TempSubscriber());
 
 System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
 }
@@ -25,6 +26,13 @@ private static Publisher<TempInfo> getTemperatures(String town){
 	return subscriber -> subscriber.onSubscribe(new TempSubscription(subscriber, town));
 }
 
+private static Publisher<TempInfo> getCelsiusTemperatures(String town){
+	return subscriber -> {
+		TempProcessor processor = new TempProcessor();
+		processor.subscribe(subscriber);
+		processor.onSubscribe(new TempSubscription(processor, town));
+	};
+}
 
 
 }
@@ -41,7 +49,7 @@ class TempInfo{
 	}
 	
 	public static TempInfo fetch(String town) {
-//		if(random.nextInt(10)==0) throw new RuntimeException("Error Message");
+		if(random.nextInt(10)==0) throw new RuntimeException("Error Message");
 		
 		return new TempInfo(town, random.nextInt(100));
 	}
@@ -63,7 +71,7 @@ class TempInfo{
 class TempSubscription implements Subscription{
 	private final Subscriber<? super TempInfo> subscriber;
 	private final String town;
-	private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	
 	public TempSubscription(Subscriber<? super TempInfo> subscriber, String town) {
 		this.subscriber = subscriber;
@@ -87,6 +95,7 @@ class TempSubscription implements Subscription{
 					subscriber.onNext(TempInfo.fetch(town));
 				}catch(Exception e) {
 					subscriber.onError(e);
+					executor.shutdown();
 					break;
 				}
 			}
@@ -155,3 +164,7 @@ class TempProcessor implements Processor<TempInfo, TempInfo>{
 		this.subscriber = subscriber;
 	}
 }
+
+//class TempObserver implements Observer<TempInfo>{
+//	
+//}
