@@ -1,5 +1,6 @@
 package tistory.모던_자바_인_액션.chapter17;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,6 +9,7 @@ import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.stream.Collectors;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -21,21 +23,28 @@ System.out.println("\n>> 17 리액티브 프로그래밍");
 System.out.println("\n>> 17.1 리액티브 매니패스토");
 System.out.println("\n>> 17.2 리액티브 스트림과 플로 API");
 
-getTemperatures("New York").subscribe(new TempSubscriber());
-getCelsiusTemperatures("New York").subscribe(new TempSubscriber());
+getTemperature("New York").subscribe(new TempSubscriber());
+getCelsiusTemperature("New York").subscribe(new TempSubscriber());
 
 System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
 
-Observable<TempInfo> observable = getTemperaturesObservable("New York");
+Observable<TempInfo> observable;
+
+observable = getTemperatureObservable("New York");
 observable.blockingSubscribe(new TempObserver());
 
+observable = getCelsiusTemperatureObservable("New York");
+observable.blockingSubscribe(new TempObserver());
+
+observable = getCelsiusTemperaturesObservable("New York", "Chicago", "San Francisco");
+observable.blockingSubscribe(new TempObserver());
 }
 
-private static Publisher<TempInfo> getTemperatures(String town){
+private static Publisher<TempInfo> getTemperature(String town){
 	return subscriber -> subscriber.onSubscribe(new TempSubscription(subscriber, town));
 }
 
-private static Publisher<TempInfo> getCelsiusTemperatures(String town){
+private static Publisher<TempInfo> getCelsiusTemperature(String town){
 	return subscriber -> {
 		TempProcessor processor = new TempProcessor();
 		processor.subscribe(subscriber);
@@ -43,7 +52,7 @@ private static Publisher<TempInfo> getCelsiusTemperatures(String town){
 	};
 }
 
-private static Observable<TempInfo> getTemperaturesObservable(String town) {
+private static Observable<TempInfo> getTemperatureObservable(String town) {
 	return Observable.create(emitter -> Observable.interval(1, TimeUnit.SECONDS)
 			.subscribe(i -> {
 				if(!emitter.isDisposed()) {
@@ -59,6 +68,16 @@ private static Observable<TempInfo> getTemperaturesObservable(String town) {
 					}
 				}
 			}));
+}
+
+private static Observable<TempInfo> getCelsiusTemperatureObservable(String town) {
+	return getTemperatureObservable(town).map(temp -> new TempInfo(temp.getTown(), (temp.getTemp()-32)*5/9));
+}
+
+private static Observable<TempInfo> getCelsiusTemperaturesObservable(String... towns) {
+	return Observable.merge(Arrays.stream(towns)
+			.map(Chapter17::getTemperatureObservable)
+			.collect(Collectors.toList()));
 }
 
 }
@@ -209,5 +228,4 @@ class TempObserver implements Observer<TempInfo>{
 	public void onComplete() {
 		System.out.println("Done!");
 	}
-	
 }
