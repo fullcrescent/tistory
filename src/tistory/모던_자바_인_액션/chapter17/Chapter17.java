@@ -3,10 +3,15 @@ package tistory.모던_자바_인_액션.chapter17;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 
 public class Chapter17 {
 
@@ -20,6 +25,10 @@ getTemperatures("New York").subscribe(new TempSubscriber());
 getCelsiusTemperatures("New York").subscribe(new TempSubscriber());
 
 System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
+
+Observable<TempInfo> observable = getTemperaturesObservable("New York");
+observable.blockingSubscribe(new TempObserver());
+
 }
 
 private static Publisher<TempInfo> getTemperatures(String town){
@@ -34,6 +43,23 @@ private static Publisher<TempInfo> getCelsiusTemperatures(String town){
 	};
 }
 
+private static Observable<TempInfo> getTemperaturesObservable(String town) {
+	return Observable.create(emitter -> Observable.interval(1, TimeUnit.SECONDS)
+			.subscribe(i -> {
+				if(!emitter.isDisposed()) {
+					if(i>=5) {
+						emitter.onComplete();
+					}else {
+						try{
+							emitter.onNext(TempInfo.fetch(town));
+						}catch (Exception e) {
+							emitter.onError(e);
+						}
+						
+					}
+				}
+			}));
+}
 
 }
 
@@ -165,6 +191,23 @@ class TempProcessor implements Processor<TempInfo, TempInfo>{
 	}
 }
 
-//class TempObserver implements Observer<TempInfo>{
-//	
-//}
+class TempObserver implements Observer<TempInfo>{
+	@Override
+	public void onSubscribe(Disposable d) {}
+
+	@Override
+	public void onNext(TempInfo t) {
+		System.out.println(t);
+	}
+
+	@Override
+	public void onError(Throwable e) {
+		System.out.println("Error : " + e.getMessage());
+	}
+
+	@Override
+	public void onComplete() {
+		System.out.println("Done!");
+	}
+	
+}
