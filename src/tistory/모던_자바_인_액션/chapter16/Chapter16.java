@@ -1,11 +1,8 @@
 package tistory.모던_자바_인_액션.chapter16;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -26,101 +23,97 @@ import tistory.모던_자바_인_액션.chapter16.ExchangeService.Money;
 public class Chapter16 {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-System.out.println("\n>> 16 CompletableFuture : 안정적 비동기 프로그래밍");
-
-
-
-System.out.println("\n>> 16.1 Future의 단순 활용");
-
-/* 자바8 이전의 코드 */
-ExecutorService executor = Executors.newCachedThreadPool();
-Future<Double> future = executor.submit(new Callable<Double>() {	// 작업 수행 시작
-	public Double call() throws Exception {
-		Thread.sleep(2000);
-		return 0D; 
-	}
-});
-
-System.out.println("start");
-Thread.sleep(1100);		// 해당 스레드를 실행하지 않을경우 java.util.concurrent.TimeoutException 발생
-try {
-	System.out.println(future.get(1, TimeUnit.SECONDS));	// 최대 1초까지만 대기
-}catch(TimeoutException e) {
-	System.out.println(e);
-}
-System.out.println("end");
-
-executor.shutdown();
-
-
-
-System.out.println("\n>> 16.2 비동기 API 구현");
-
-Shop shop = new Shop("BestShop");
-long start = System.nanoTime();
-
-Future<Double> futurePrice = shop.getPriceAsync("product");
-
-long startTime = ((System.nanoTime()-start)/1_000_000);
-System.out.println("return start " + startTime + " msecs");
-
-double price = futurePrice.get();
-//double price = futurePrice.get(1, TimeUnit.SECONDS);	타임 아웃으로 제어할시 계산 중에 에러가 난 사항을 잡을 수 없음.
-System.out.printf("Price is %.2f%n", price);
-
-long endTime = ((System.nanoTime()-start)/1_000_000);
-System.out.println("return end " + endTime + " msecs");
-
-
-
-System.out.println("\n>> 16.3 비블록 코드 만들기");
-
-PriceFinder priceFinder = new PriceFinder();
-
-/* 순차 */
-duration(priceFinder::findPrices1);
-
-/* 병렬 스트림 */
-duration(priceFinder::findPrices2);
-
-/* CompletableFuture로 비동기 호출 */
-duration(priceFinder::findPrices3);
-
-
-
-System.out.println("\n>> 16.4 비동기 작업 파이프라인 만들기");
-
-/* 순차 */
-duration(priceFinder::findPricesDiscount1);
-
-/* 병렬 스트림 */
-duration(priceFinder::findPricesDiscount2);
-
-/* CompletableFuture로 비동기 호출 */
-duration(priceFinder::findPricesDiscount3);
-
-
-/* 자바7 기준 */
-duration(priceFinder::findPricesInUSD1);
-
-/* 자바9 기준 */
-duration(priceFinder::findPricesInUSD2);
-
-System.out.println("\n>> 16.5 CompletableFuture의 종료에 대응하는 방법");
-
-new PriceFinder().print();
-
-
+		System.out.println("\n>> 16 CompletableFuture : 안정적 비동기 프로그래밍");
+		
+		System.out.println("\n>> 16.1 Future의 단순 활용");
+		
+		/* 자바8 이전의 코드 */
+		ExecutorService executor = Executors.newCachedThreadPool();
+		Future<Double> future = executor.submit(new Callable<Double>() {	// 작업 수행 시작
+			public Double call() throws Exception {
+				Thread.sleep(2000);
+				return 0D; 
+			}
+		});
+		
+		System.out.println("start");
+				// 해당 스레드를 실행하지 않을경우 java.util.concurrent.TimeoutException 발생
+		try {
+			System.out.println(future.get(1, TimeUnit.SECONDS));	// 최대 1초까지만 대기
+		}catch(TimeoutException e) {
+			System.out.println(e);
+		}
+		System.out.println("end");
+		
+		executor.shutdown();
+		
+		
+		
+		System.out.println("\n>> 16.2 비동기 API 구현");
+		
+		Shop shop = new Shop("BestShop");
+		long start = System.nanoTime();
+		
+		Future<Double> futurePrice = shop.getPriceAsync("product");
+		
+		long startTime = ((System.nanoTime()-start)/1_000_000);
+		System.out.println("return start " + startTime + " msecs");
+		
+		double price = futurePrice.get();
+		//double price = futurePrice.get(1, TimeUnit.SECONDS);	타임 아웃으로 제어할시 계산 중에 에러가 난 사항을 잡을 수 없음.
+		System.out.printf("Price is %.2f%n", price);
+		
+		long endTime = ((System.nanoTime()-start)/1_000_000);
+		System.out.println("return end " + endTime + " msecs");
+		
+		
+		
+		System.out.println("\n>> 16.3 비블록 코드 만들기");
+		
+		PriceFinder priceFinder = new PriceFinder();
+		
+		/* 순차 */
+		duration(priceFinder::findPrices1);
+		
+		/* 병렬 스트림 */
+		duration(priceFinder::findPrices2);
+		
+		/* CompletableFuture로 비동기 호출 */
+		duration(priceFinder::findPrices3);
+		
+		
+		
+		System.out.println("\n>> 16.4 비동기 작업 파이프라인 만들기");
+		
+		/* 순차 */
+		duration(priceFinder::findPricesDiscount1);
+		
+		/* 병렬 스트림 */
+		duration(priceFinder::findPricesDiscount2);
+		
+		/* CompletableFuture로 비동기 호출 */
+		duration(priceFinder::findPricesDiscount3);
+		
+		
+		/* 자바7 기준 */
+		duration(priceFinder::findPricesInUSD1);
+		
+		/* 자바9 기준 */
+		duration(priceFinder::findPricesInUSD2);
+		
+		
+		
+		System.out.println("\n>> 16.5 CompletableFuture의 종료에 대응하는 방법");
+		
+		new PriceFinder().print();
 	}
 
-private static void duration(Function<String, List<String>> f) {
-	long start = System.nanoTime();
-	System.out.println(f.apply("myPhone27S"));
-	long duration = (System.nanoTime()-start)/1_000_000;
-	System.out.println("총 실행시간 : " + duration + "msecs");
-}
-	
-
+	private static void duration(Function<String, List<String>> f) {
+		long start = System.nanoTime();
+		System.out.println(f.apply("myPhone27S"));
+		long duration = (System.nanoTime()-start)/1_000_000;
+		System.out.println("총 실행시간 : " + duration + "msecs");
+	}
 }
 
 class Util {
