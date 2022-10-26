@@ -17,69 +17,68 @@ import io.reactivex.disposables.Disposable;
 
 public class Chapter17 {
 
-public static void main(String[] args) {
-System.out.println("\n>> 17 리액티브 프로그래밍");
-
-System.out.println("\n>> 17.1 리액티브 매니패스토");
-System.out.println("\n>> 17.2 리액티브 스트림과 플로 API");
-
-getTemperature("New York").subscribe(new TempSubscriber());
-getCelsiusTemperature("New York").subscribe(new TempSubscriber());
-
-System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
-
-Observable<TempInfo> observable;
-
-observable = getTemperatureObservable("New York");
-observable.blockingSubscribe(new TempObserver());
-
-observable = getCelsiusTemperatureObservable("New York");
-observable.blockingSubscribe(new TempObserver());
-
-observable = getCelsiusTemperaturesObservable("New York", "Chicago", "San Francisco");
-observable.blockingSubscribe(new TempObserver());
-}
-
-private static Publisher<TempInfo> getTemperature(String town){
-	return subscriber -> subscriber.onSubscribe(new TempSubscription(subscriber, town));
-}
-
-private static Publisher<TempInfo> getCelsiusTemperature(String town){
-	return subscriber -> {
-		TempProcessor processor = new TempProcessor();
-		processor.subscribe(subscriber);
-		processor.onSubscribe(new TempSubscription(processor, town));
-	};
-}
-
-private static Observable<TempInfo> getTemperatureObservable(String town) {
-	return Observable.create(emitter -> Observable.interval(1, TimeUnit.SECONDS)
-			.subscribe(i -> {
-				if(!emitter.isDisposed()) {
-					if(i>=5) {
-						emitter.onComplete();
-					}else {
-						try{
-							emitter.onNext(TempInfo.fetch(town));
-						}catch (Exception e) {
-							emitter.onError(e);
+	public static void main(String[] args) {
+		System.out.println("\n>> 17 리액티브 프로그래밍");
+		
+		System.out.println("\n>> 17.1 리액티브 매니패스토");
+		System.out.println("\n>> 17.2 리액티브 스트림과 플로 API");
+		
+		getTemperature("New York").subscribe(new TempSubscriber());
+		getCelsiusTemperature("New York").subscribe(new TempSubscriber());
+		
+		System.out.println("\n>> 17.3 리액티브 라이브러리 RxJava 사용하기");
+		
+		Observable<TempInfo> observable;
+		
+		observable = getTemperatureObservable("New York");
+		observable.blockingSubscribe(new TempObserver());
+		
+		observable = getCelsiusTemperatureObservable("New York");
+		observable.blockingSubscribe(new TempObserver());
+		
+		observable = getCelsiusTemperaturesObservable("New York", "Chicago", "San Francisco");
+		observable.blockingSubscribe(new TempObserver());
+	}
+	
+	private static Publisher<TempInfo> getTemperature(String town){
+		return subscriber -> subscriber.onSubscribe(new TempSubscription(subscriber, town));
+	}
+	
+	private static Publisher<TempInfo> getCelsiusTemperature(String town){
+		return subscriber -> {
+			TempProcessor processor = new TempProcessor();
+			processor.subscribe(subscriber);
+			processor.onSubscribe(new TempSubscription(processor, town));
+		};
+	}
+	
+	private static Observable<TempInfo> getTemperatureObservable(String town) {
+		return Observable.create(emitter -> Observable.interval(1, TimeUnit.SECONDS)
+				.subscribe(i -> {
+					if(!emitter.isDisposed()) {
+						if(i>=5) {
+							emitter.onComplete();
+						}else {
+							try{
+								emitter.onNext(TempInfo.fetch(town));
+							}catch (Exception e) {
+								emitter.onError(e);
+							}
+							
 						}
-						
 					}
-				}
-			}));
-}
-
-private static Observable<TempInfo> getCelsiusTemperatureObservable(String town) {
-	return getTemperatureObservable(town).map(temp -> new TempInfo(temp.getTown(), (temp.getTemp()-32)*5/9));
-}
-
-private static Observable<TempInfo> getCelsiusTemperaturesObservable(String... towns) {
-	return Observable.merge(Arrays.stream(towns)
-			.map(Chapter17::getTemperatureObservable)
-			.collect(Collectors.toList()));
-}
-
+				}));
+	}
+	
+	private static Observable<TempInfo> getCelsiusTemperatureObservable(String town) {
+		return getTemperatureObservable(town).map(temp -> new TempInfo(temp.getTown(), (temp.getTemp()-32)*5/9));
+	}
+	
+	private static Observable<TempInfo> getCelsiusTemperaturesObservable(String... towns) {
+		return Observable.merge(Arrays.stream(towns)
+				.map(Chapter17::getTemperatureObservable)
+				.collect(Collectors.toList()));
+	}
 }
 
 class TempInfo{
