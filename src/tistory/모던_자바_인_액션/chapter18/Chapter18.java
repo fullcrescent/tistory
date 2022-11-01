@@ -22,7 +22,7 @@ public class Chapter18 {
 						,new Transaction(4)
 						,new Transaction(3)));
 		
-		/* 명령형 프로그래밍 - 어떻게에 집중 */
+		/* 명령형 프로그래밍 - '어떻게'에 집중 */
 		Transaction mostExpensive1 = transactions.get(0);
 		if(mostExpensive1==null) {
 			throw new IllegalArgumentException("Empty list of transactions");
@@ -34,7 +34,7 @@ public class Chapter18 {
 		}
 		System.out.println(mostExpensive1.getValue());
 		
-		/* 선언형 프로그래밍 - 무엇을에 집중 */
+		/* 선언형 프로그래밍 - '무엇을'에 집중 */
 		Optional<Transaction> mostExpensive2 = transactions.stream().max(Comparator.comparing(Transaction::getValue));
 		System.out.println(mostExpensive2.get().getValue());
 		
@@ -81,6 +81,7 @@ public class Chapter18 {
 		return result;
 	}
 	
+	/* 실무에서는 아래와 같이 사용하지 않도록 주의 */
 	private static List<List<Integer>> concat(List<List<Integer>> list1, List<List<Integer>> list2) {
 		List<List<Integer>> list = new ArrayList<>(list1);
 		list.addAll(list2);
@@ -88,6 +89,7 @@ public class Chapter18 {
 		return list;
 	}
 	
+	/* 반복 방식 */
 	private static int factorialIterative(int n) {
 		int r = 1;
 		
@@ -96,19 +98,21 @@ public class Chapter18 {
 		return r;
 	}
 	
+	/* 재귀 방식 */
 	private static long factorialRecursive(long n) {
 		return n==1 ? 1 : n*factorialRecursive(n-1);
 	}
 	
+	/* 스트림 */
 	private static long factorialStreams(long n) {
 		return LongStream.rangeClosed(1, n)
 				.reduce(1, (a, b) -> a*b);
 	}
 	
+	/* 꼬리 재귀 */
 	private static long factorialTailRecursive(long n) {
 		return factorialHelper(1, n);
 	}
-	
 	private static long factorialHelper(long acc, long n) {
 		return n==1 ? acc : factorialHelper(acc*n, n-1);
 	}
