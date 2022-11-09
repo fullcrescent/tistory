@@ -18,7 +18,43 @@ public class Chapter19 {
 		
 		System.out.println("\n>> 19.2 영속 자료구조");
 		
+		TrainJourney first;
+		TrainJourney second;
+		
+		first = new TrainJourney(1, null);
+		second = new TrainJourney(2, null);
+		TrainJourney link = TrainJourney.link(first, second);
+		System.out.println("명령형 : " + link);
+		
+		first = new TrainJourney(1, null);
+		second = new TrainJourney(2, null);
+		TrainJourney append = TrainJourney.append(first, second);
+		System.out.println("함수형 : " + append);
+		
+		Tree tree = new Tree("Mary", 22,
+				new Tree("Emily", 20, 
+						new Tree("Alan", 50, null, null),
+						new Tree("Georgie", 23, null, null)
+						),
+				new Tree("Tian", 29,
+						new Tree("Raoul", 23, null, null),
+						null)
+				);
+		
+		System.out.println(TreeProcessor.lookup("Raoul", -1, tree));
+		System.out.println(TreeProcessor.lookup("Will", -1, tree));
+		
+		Tree f = TreeProcessor.fupdate("Will", 26, tree);
+		System.out.println(TreeProcessor.lookup("Will", -1, tree));
+		System.out.println(TreeProcessor.lookup("Will", -1, f));
+		
+		Tree u = TreeProcessor.update("Will", 40, tree);
+		System.out.println(TreeProcessor.lookup("Will", -1, tree));
+		System.out.println(TreeProcessor.lookup("Will", -1, u));
+		
 		System.out.println("\n>> 19.3 스트림과 게으른 평가");
+		
+		
 		
 		System.out.println("\n>> 19.4 패턴 매칭");
 		
@@ -40,7 +76,7 @@ class TrainJourney{
 		onward = t;
 	}
 	
-	static TrainJourney link(TrainJourney a, TrainJourney b) {
+	public static TrainJourney link(TrainJourney a, TrainJourney b) {
 		if(a==null) {
 			return b;
 		}
@@ -53,14 +89,67 @@ class TrainJourney{
 		return a;
 	}
 	
-	static TrainJourney append(TrainJourney a, TrainJourney b) {
+	public static TrainJourney append(TrainJourney a, TrainJourney b) {
 		return a==null ? b : new TrainJourney(a.price, append(a.onward, b));
 	}
 	
-	void visit(TrainJourney journey, Consumer<TrainJourney> c) {
+	public void visit(TrainJourney journey, Consumer<TrainJourney> c) {
 		if(journey!=null) {
 			c.accept(journey);
 			visit(journey.onward, c);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("TrainJourney[%d] -> %s", price, onward);
+	}
+}
+
+class Tree{
+	public String key;
+	public int val;
+	public Tree left, right;
+	
+	public Tree(String key, int val, Tree left, Tree right) {
+		this.key = key;
+		this.val = val;
+		this.left = left;
+		this.right = right;
+	}
+}
+
+class TreeProcessor{
+	public static int lookup(String key, int defaultval, Tree tree) {
+		if(tree==null) return defaultval;
+		if(key.equals(tree.key)) return tree.val;
+		return lookup(key, defaultval, key.compareTo(tree.key)<0 ? tree.left : tree.right);
+	}
+	
+	public static Tree update(String key, int newval, Tree tree) {
+		if(tree==null) {
+			tree = new Tree(key, newval, null, null);
+		}
+		else if(key.equals(tree.key)) {
+			tree.val = newval;
+		}
+		else if(key.compareTo(tree.key)<0) {
+			tree.left = update(key, newval, tree.left);
+		}
+		else {
+			tree.right = update(key, newval, tree.right);
+		}
+		
+		return tree;
+	}
+	
+	public static Tree fupdate(String key, int newval, Tree tree) {
+		return (tree==null) ? 
+				new Tree(key, newval, null, null) : 
+				key.equals(tree.key) ? 
+						new Tree(key, newval, tree.left, tree.right) : 
+						key.compareTo(tree.key)<0 ? 
+								new Tree(tree.key, tree.val, fupdate(key, newval, tree.left), tree.right) :
+								new Tree(tree.key, tree.val, tree.left, fupdate(key, newval, tree.right)); 
 	}
 }
