@@ -2,6 +2,9 @@ package tistory.모던_자바_인_액션.chapter19;
 
 import java.util.function.Consumer;
 import java.util.function.DoubleUnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class Chapter19 {
 	public static void main(String[] args) {
@@ -54,7 +57,7 @@ public class Chapter19 {
 		
 		System.out.println("\n>> 19.3 스트림과 게으른 평가");
 		
-		
+		System.out.println(primes(25).map(String::valueOf).collect(Collectors.joining(", ")));
 		
 		System.out.println("\n>> 19.4 패턴 매칭");
 		
@@ -64,6 +67,18 @@ public class Chapter19 {
 
 	private static DoubleUnaryOperator curriedConverter(double y, int z) {
 		return (double x) -> x*y+z;
+	}
+	
+	private static Stream<Integer> primes(int n){
+		return Stream.iterate(2, i -> i+1)
+				.filter(Chapter19::isPrime)
+				.limit(n);
+	}
+
+	private static boolean isPrime(int candidate) {
+		int candidateRoot = (int) Math.sqrt(candidate);
+		return IntStream.rangeClosed(2, candidateRoot)
+				.noneMatch(i -> candidate%i==0);
 	}
 }
 
