@@ -2,9 +2,11 @@ package tistory.모던_자바_인_액션.chapter19;
 
 import java.util.function.Consumer;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 
 public class Chapter19 {
 	public static void main(String[] args) {
@@ -166,5 +168,47 @@ class TreeProcessor{
 						key.compareTo(tree.key)<0 ? 
 								new Tree(tree.key, tree.val, fupdate(key, newval, tree.left), tree.right) :
 								new Tree(tree.key, tree.val, tree.left, fupdate(key, newval, tree.right)); 
+	}
+}
+
+interface MyList<T>{
+	T head();
+	
+	MyList<T> tail();
+	
+	default boolean isEmpty() {
+		return true;
+	}
+	
+	MyList<T> filter(Predicate<T> p);
+}
+
+class MyLinkedList<T> implements MyList<T>{
+	private final T head;
+	private final MyList<T> tail;
+	
+	public MyLinkedList(T head, MyList<T> tail) {
+		this.head = head;
+		this.tail = tail;
+	}
+	
+	@Override
+	public T head() {
+		return head;
+	}
+
+	@Override
+	public MyList<T> tail() {
+		return tail;
+	}
+	
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
+	
+	@Override
+	public MyList<T> filter(Predicate<T> p) {
+		return isEmpty() ? this : p.test(head()) ? new MyLinkedList<>(head, tail().filter(p)) : tail().filter(p);
 	}
 }
