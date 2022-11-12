@@ -3,6 +3,7 @@ package tistory.모던_자바_인_액션.chapter19;
 import java.util.function.Consumer;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -20,6 +21,8 @@ public class Chapter19 {
 		System.out.printf("24℃ = %.2f℉%n", convertCtoF.applyAsDouble(24));
 		System.out.printf("US＄100 = ￡%.2f%n", convertUSDtoGBP.applyAsDouble(100));
 		System.out.printf("20km = %.2fmiles%n", convertKmtoMi.applyAsDouble(20));
+		
+		
 		
 		System.out.println("\n>> 19.2 영속 자료구조");
 		
@@ -57,9 +60,28 @@ public class Chapter19 {
 		System.out.println(TreeProcessor.lookup("Will", -1, tree));
 		System.out.println(TreeProcessor.lookup("Will", -1, u));
 		
+		
+		
 		System.out.println("\n>> 19.3 스트림과 게으른 평가");
 		
 		System.out.println(primes(25).map(String::valueOf).collect(Collectors.joining(", ")));
+		
+		MyList<Integer> list = new MyLinkedList<>(5, new MyLinkedList<>(10, new Empty<>()));
+		System.out.println(list.head());
+		
+		LazyList<Integer> numbers = from(2);
+		int two = numbers.head();
+		int three = numbers.tail().head();
+		int four = numbers.tail().tail().head();
+		System.out.println(two + " " + three + " " + four);
+		
+		int prime_two = primes(numbers).head();
+		int prime_three = primes(numbers).tail().head();
+		int prime_four = primes(numbers).tail().tail().head();
+		System.out.println(prime_two + " " + prime_three + " " + prime_four);
+		
+		/* 꼬리 호출 제거 기능이 없음 -> 스택 오버플로가 발생할 때까지 실행 */
+//		printAll(numbers);
 		
 		System.out.println("\n>> 19.4 패턴 매칭");
 		
@@ -81,6 +103,29 @@ public class Chapter19 {
 		int candidateRoot = (int) Math.sqrt(candidate);
 		return IntStream.rangeClosed(2, candidateRoot)
 				.noneMatch(i -> candidate%i==0);
+	}
+	
+	private static LazyList<Integer> from(int n){
+		return new LazyList<>(n, ()->from(n+1));
+	}
+	
+	private static MyList<Integer> primes(MyList<Integer> numbers){
+		return new LazyList<>(
+				numbers.head(), 
+				() -> primes(
+						numbers.tail().filter(n -> n%numbers.head()!=0)));
+	}
+	
+	private static <T> void printAll(MyList<T> list) {
+//		while(!list.isEmpty()) {
+//			System.out.println(list.head());
+//			list = list.tail();
+//		}
+		
+		if(list.isEmpty()) return;
+		
+		System.out.println(list.head());
+		printAll(list.tail());
 	}
 }
 
@@ -209,6 +254,62 @@ class MyLinkedList<T> implements MyList<T>{
 	
 	@Override
 	public MyList<T> filter(Predicate<T> p) {
-		return isEmpty() ? this : p.test(head()) ? new MyLinkedList<>(head, tail().filter(p)) : tail().filter(p);
+		return isEmpty() ? 
+				this : 
+				p.test(head()) ? 
+					new MyLinkedList<>(head, tail().filter(p)) : 
+					tail().filter(p);
 	}
+}
+
+class Empty<T> implements MyList<T>{
+	@Override
+	public T head() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public MyList<T> tail() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public MyList<T> filter(Predicate<T> p) {
+		return this;
+	}
+}
+
+class LazyList<T> implements MyList<T>{
+	private final T head;
+	private final Supplier<MyList<T>> tail;
+	
+	public LazyList(T head, Supplier<MyList<T>> tail) {
+		this.head = head;
+		this.tail = tail;
+	}
+
+	@Override
+	public T head() {
+		return head;
+	}
+
+	@Override
+	public MyList<T> tail() {
+		return tail.get();
+	}
+	
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
+	
+	@Override
+	public MyList<T> filter(Predicate<T> p) {
+		return isEmpty() ? 
+				this : 
+				p.test(head()) ? 
+					new LazyList<>(head(), () -> tail().filter(p)) :
+					tail().filter(p);
+	}
+	
 }
