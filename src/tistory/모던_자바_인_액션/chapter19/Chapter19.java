@@ -2,6 +2,7 @@ package tistory.모던_자바_인_액션.chapter19;
 
 import java.util.function.Consumer;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -85,6 +86,11 @@ public class Chapter19 {
 		
 		System.out.println("\n>> 19.4 패턴 매칭");
 		
+		Expr e = new BinOp("+", new Number(5), new BinOp("*", new Number(3), new Number(4)));
+		Expr match = simplify(e);
+		System.out.println(match);
+		
+		
 		System.out.println("\n>> 19.5 기타 정보");
 		
 	}
@@ -126,6 +132,47 @@ public class Chapter19 {
 		
 		System.out.println(list.head());
 		printAll(list.tail());
+	}
+	
+	private static Expr simplify(Expr e) {
+		TriFunction<String, Expr, Expr, Expr> binopcase = 
+				(opname, left, right) -> {
+					if("+".equals(opname)) {
+						if(left instanceof Number && ((Number) left).val==0) {
+							return right;
+						}
+						if(right instanceof Number && ((Number) right).val==0) {
+							return left;
+						}
+					}
+					
+					if("*".equals(opname)) {
+						if(left instanceof Number && ((Number) left).val==1) {
+							return right;
+						}
+						if(right instanceof Number && ((Number) right).val==1) {
+							return left;
+						}
+					}
+					
+					return new BinOp(opname, left, right);
+				};
+		
+		Function<Integer, Expr> numcase = val -> new Number(val);
+		Supplier<Expr> defaultcase = () -> new Number(0);
+		
+		return patternMatchExpr(e, binopcase, numcase, defaultcase);
+	}
+	
+	private static <T> T patternMatchExpr(Expr e
+			, TriFunction<String, Expr, Expr, T> binopcase
+			, Function<Integer, T> numcase
+			, Supplier<T> defaultcase) {
+		return (e instanceof BinOp) ? 
+				binopcase.apply(((BinOp)e).opname, ((BinOp)e).left, ((BinOp)e).right) :
+				(e instanceof Number) ?
+					numcase.apply(((Number)e).val) :
+					defaultcase.get();
 	}
 }
 
@@ -311,5 +358,39 @@ class LazyList<T> implements MyList<T>{
 					new LazyList<>(head(), () -> tail().filter(p)) :
 					tail().filter(p);
 	}
+}
+
+class Expr{}
+
+class Number extends Expr{
+	int val;
 	
+	public Number(int val) {
+		this.val = val;
+	}
+	
+	@Override
+	public String toString() {
+		return "" + val;
+	}
+}
+
+class BinOp extends Expr{
+	String opname;
+	Expr left, right;
+	
+	public BinOp(String opname, Expr left, Expr right) {
+		this.opname = opname;
+		this.left = left;
+		this.right = right;
+	}
+	
+	@Override
+	public String toString() {
+		return "(" + left + " " + opname + " " + right + ")";
+	}
+}
+
+interface TriFunction<S, T, U, R>{
+	R apply(S s, T t, U u);
 }
