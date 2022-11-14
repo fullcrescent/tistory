@@ -22,7 +22,9 @@ public class Chapter19 {
 		System.out.printf("24℃ = %.2f℉%n", convertCtoF.applyAsDouble(24));
 		System.out.printf("US＄100 = ￡%.2f%n", convertUSDtoGBP.applyAsDouble(100));
 		System.out.printf("20km = %.2fmiles%n", convertKmtoMi.applyAsDouble(20));
-		
+		//24℃ = 75.20℉
+		//US＄100 = ￡60.00
+		//20km = 12.43miles
 		
 		
 		System.out.println("\n>> 19.2 영속 자료구조");
@@ -34,11 +36,14 @@ public class Chapter19 {
 		second = new TrainJourney(2, null);
 		TrainJourney link = TrainJourney.link(first, second);
 		System.out.println("명령형 : " + link);
+		// 명령형 : TrainJourney[1] -> TrainJourney[2] -> null
 		
 		first = new TrainJourney(1, null);
 		second = new TrainJourney(2, null);
 		TrainJourney append = TrainJourney.append(first, second);
 		System.out.println("함수형 : " + append);
+		// 함수형 : TrainJourney[1] -> TrainJourney[2] -> null
+		
 		
 		Tree tree = new Tree("Mary", 22,
 				new Tree("Emily", 20, 
@@ -50,40 +55,46 @@ public class Chapter19 {
 						null)
 				);
 		
-		System.out.println(TreeProcessor.lookup("Raoul", -1, tree));
-		System.out.println(TreeProcessor.lookup("Will", -1, tree));
+		System.out.println(TreeProcessor.lookup("Raoul", -1, tree));	// 23
+		System.out.println(TreeProcessor.lookup("Will", -1, tree));		// -1
 		
 		Tree f = TreeProcessor.fupdate("Will", 26, tree);
-		System.out.println(TreeProcessor.lookup("Will", -1, tree));
-		System.out.println(TreeProcessor.lookup("Will", -1, f));
+		System.out.println(TreeProcessor.lookup("Will", -1, tree));		// -1
+		System.out.println(TreeProcessor.lookup("Will", -1, f));		// 26
 		
 		Tree u = TreeProcessor.update("Will", 40, tree);
-		System.out.println(TreeProcessor.lookup("Will", -1, tree));
-		System.out.println(TreeProcessor.lookup("Will", -1, u));
+		System.out.println(TreeProcessor.lookup("Will", -1, tree));		// 40
+		System.out.println(TreeProcessor.lookup("Will", -1, u));		// 40
 		
 		
 		
 		System.out.println("\n>> 19.3 스트림과 게으른 평가");
 		
 		System.out.println(primes(25).map(String::valueOf).collect(Collectors.joining(", ")));
+		// 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
 		
 		MyList<Integer> list = new MyLinkedList<>(5, new MyLinkedList<>(10, new Empty<>()));
 		System.out.println(list.head());
+		// 5
 		
 		LazyList<Integer> numbers = from(2);
 		int two = numbers.head();
 		int three = numbers.tail().head();
 		int four = numbers.tail().tail().head();
 		System.out.println(two + " " + three + " " + four);
+		// 2 3 4
 		
 		int prime_two = primes(numbers).head();
 		int prime_three = primes(numbers).tail().head();
 		int prime_four = primes(numbers).tail().tail().head();
 		System.out.println(prime_two + " " + prime_three + " " + prime_four);
+		// 2 3 5
 		
 		/* 꼬리 호출 제거 기능이 없음 -> 스택 오버플로가 발생할 때까지 실행 */
-//		printAll(numbers);
-		
+		//printAll(numbers);
+				
+				
+				
 		System.out.println("\n>> 19.4 패턴 매칭");
 		
 		Expr e = new BinOp("+", new Number(5), new BinOp("*", new Number(3), new Number(4)));
@@ -93,18 +104,19 @@ public class Chapter19 {
 		
 		System.out.println("\n>> 19.5 기타 정보");
 		
+		System.out.println(repeat(3, (Integer x) -> 2*x).apply(10));
 	}
 
 	private static DoubleUnaryOperator curriedConverter(double y, int z) {
 		return (double x) -> x*y+z;
 	}
-	
+		
 	private static Stream<Integer> primes(int n){
 		return Stream.iterate(2, i -> i+1)
 				.filter(Chapter19::isPrime)
 				.limit(n);
 	}
-
+	
 	private static boolean isPrime(int candidate) {
 		int candidateRoot = (int) Math.sqrt(candidate);
 		return IntStream.rangeClosed(2, candidateRoot)
@@ -122,18 +134,18 @@ public class Chapter19 {
 						numbers.tail().filter(n -> n%numbers.head()!=0)));
 	}
 	
-	private static <T> void printAll(MyList<T> list) {
-//		while(!list.isEmpty()) {
-//			System.out.println(list.head());
-//			list = list.tail();
-//		}
+//	private static <T> void printAll(MyList<T> list) {
+//	//	while(!list.isEmpty()) {
+//	//		System.out.println(list.head());
+//	//		list = list.tail();
+//	//	}
+//	
+//		if(list.isEmpty()) return;
+//		
+//		System.out.println(list.head());
+//		printAll(list.tail());
+//	}
 		
-		if(list.isEmpty()) return;
-		
-		System.out.println(list.head());
-		printAll(list.tail());
-	}
-	
 	private static Expr simplify(Expr e) {
 		TriFunction<String, Expr, Expr, Expr> binopcase = 
 				(opname, left, right) -> {
@@ -174,6 +186,14 @@ public class Chapter19 {
 					numcase.apply(((Number)e).val) :
 					defaultcase.get();
 	}
+	
+	private static <A, B, C> Function<A, C> compose(Function<B, C> g, Function<A, B> f){
+		return x -> g.apply(f.apply(x));
+	}
+	
+	private static <A> Function<A, A> repeat(int n, Function<A, A> f){
+		return n==0 ? x -> x : compose(f, repeat(n-1, f));
+	}
 }
 
 class TrainJourney{
@@ -185,6 +205,7 @@ class TrainJourney{
 		onward = t;
 	}
 	
+	/* 자료 구조가 파괴적으로 갱신 */
 	public static TrainJourney link(TrainJourney a, TrainJourney b) {
 		if(a==null) {
 			return b;
@@ -198,6 +219,7 @@ class TrainJourney{
 		return a;
 	}
 	
+	/* 자료구조 갱신X(함수형) */
 	public static TrainJourney append(TrainJourney a, TrainJourney b) {
 		return a==null ? b : new TrainJourney(a.price, append(a.onward, b));
 	}
@@ -252,6 +274,7 @@ class TreeProcessor{
 		return tree;
 	}
 	
+	/* 함수형 접근 - 자료구조 변경X */
 	public static Tree fupdate(String key, int newval, Tree tree) {
 		return (tree==null) ? 
 				new Tree(key, newval, null, null) : 
@@ -360,6 +383,10 @@ class LazyList<T> implements MyList<T>{
 	}
 }
 
+interface TriFunction<S, T, U, R>{
+	R apply(S s, T t, U u);
+}
+
 class Expr{}
 
 class Number extends Expr{
@@ -389,8 +416,4 @@ class BinOp extends Expr{
 	public String toString() {
 		return "(" + left + " " + opname + " " + right + ")";
 	}
-}
-
-interface TriFunction<S, T, U, R>{
-	R apply(S s, T t, U u);
 }
